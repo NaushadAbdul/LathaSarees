@@ -1,0 +1,6 @@
+{
+  "name": "Latha Sarees & Jewelry",
+  "description": "Discover elegant sarees and exquisite jewelry at Latha Sarees & Jewelry. Shop timeless Indian fashion, curated collections, and statement pieces.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

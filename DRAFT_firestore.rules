@@ -1,0 +1,238 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'naushadabdul2006@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+        'name', 'slug', 'description', 'category', 'subcategory',
+        'price', 'originalPrice', 'discount', 'images', 'thumbnail',
+        'stock', 'sku', 'colors', 'fabric', 'occasion', 'weave',
+        'featured', 'newArrival', 'rating', 'reviewCount', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name', 'slug', 'description', 'category', 'subcategory',
+        'price', 'originalPrice', 'discount', 'images', 'thumbnail',
+        'stock', 'sku', 'colors', 'fabric', 'occasion', 'weave',
+        'featured', 'newArrival', 'rating', 'reviewCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 2 && data.name.size() <= 140 &&
+      data.slug is string && data.slug.size() >= 2 && data.slug.size() <= 140 && data.slug.matches('^[a-z0-9\\-]+$') &&
+      data.description is string && data.description.size() >= 10 && data.description.size() <= 2000 &&
+      data.category is string && (data.category == 'Sarees' || data.category == 'Jewelry') &&
+      data.subcategory is string && data.subcategory.size() >= 2 && data.subcategory.size() <= 60 &&
+      data.price is number && data.price >= 0 && data.price <= 10000000 &&
+      data.originalPrice is number && data.originalPrice >= data.price && data.originalPrice <= 10000000 &&
+      data.discount is number && data.discount >= 0 && data.discount <= 95 &&
+      data.images is list && data.images.size() >= 1 && data.images.size() <= 8 && data.images[0] is string && data.images[0].size() <= 500 &&
+      data.thumbnail is string && data.thumbnail.size() >= 1 && data.thumbnail.size() <= 500 &&
+      data.stock is number && data.stock >= 0 && data.stock <= 10000 &&
+      data.sku is string && data.sku.size() >= 2 && data.sku.size() <= 40 &&
+      data.colors is list && data.colors.size() >= 1 && data.colors.size() <= 10 && data.colors[0] is string && data.colors[0].size() <= 40 &&
+      data.fabric is string && data.fabric.size() >= 1 && data.fabric.size() <= 80 &&
+      data.occasion is string && data.occasion.size() >= 1 && data.occasion.size() <= 80 &&
+      data.weave is string && data.weave.size() >= 1 && data.weave.size() <= 80 &&
+      data.featured is bool &&
+      data.newArrival is bool &&
+      data.rating is number && data.rating >= 0 && data.rating <= 5 &&
+      data.reviewCount is number && data.reviewCount >= 0 && data.reviewCount <= 100000 &&
+      data.createdAt is timestamp &&
+      (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidUserPrivateProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'updatedAt']) &&
+      data.keys().hasOnly(['uid', 'displayName', 'email', 'phone', 'addressLine', 'city', 'state', 'pincode', 'updatedAt']) &&
+      data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == userId && data.uid == request.auth.uid &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+      data.email is string && data.email.size() >= 3 && data.email.size() <= 150 &&
+      (!('phone' in data) || (data.phone is string && data.phone.size() <= 25)) &&
+      (!('addressLine' in data) || (data.addressLine is string && data.addressLine.size() <= 250)) &&
+      (!('city' in data) || (data.city is string && data.city.size() <= 80)) &&
+      (!('state' in data) || (data.state is string && data.state.size() <= 80)) &&
+      (!('pincode' in data) || (data.pincode is string && data.pincode.size() <= 12)) &&
+      data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+        'orderNumber', 'userId', 'customerName', 'customerEmail', 'customerPhone',
+        'shippingAddress', 'city', 'state', 'pincode', 'paymentMethod',
+        'paymentStatus', 'status', 'subtotal', 'shippingFee', 'discountAmount',
+        'totalAmount', 'itemSummary', 'itemCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'orderNumber', 'userId', 'customerName', 'customerEmail', 'customerPhone',
+        'shippingAddress', 'city', 'state', 'pincode', 'paymentMethod',
+        'paymentStatus', 'status', 'subtotal', 'shippingFee', 'discountAmount',
+        'totalAmount', 'itemSummary', 'itemCount', 'createdAt', 'updatedAt'
+      ]) &&
+      data.orderNumber is string && data.orderNumber.size() >= 4 && data.orderNumber.size() <= 40 &&
+      data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+      data.customerName is string && data.customerName.size() >= 2 && data.customerName.size() <= 100 &&
+      data.customerEmail is string && data.customerEmail.size() >= 3 && data.customerEmail.size() <= 150 &&
+      data.customerPhone is string && data.customerPhone.size() >= 6 && data.customerPhone.size() <= 20 &&
+      data.shippingAddress is string && data.shippingAddress.size() >= 5 && data.shippingAddress.size() <= 300 &&
+      data.city is string && data.city.size() >= 2 && data.city.size() <= 80 &&
+      data.state is string && data.state.size() >= 2 && data.state.size() <= 80 &&
+      data.pincode is string && data.pincode.size() >= 4 && data.pincode.size() <= 12 &&
+      data.paymentMethod is string && (data.paymentMethod == 'Online Payment' || data.paymentMethod == 'Cash on Delivery') &&
+      data.paymentStatus is string && (data.paymentStatus == 'Paid' || data.paymentStatus == 'Pending' || data.paymentStatus == 'COD') &&
+      data.status is string && (
+        data.status == 'Pending' ||
+        data.status == 'Confirmed' ||
+        data.status == 'Processing' ||
+        data.status == 'Shipped' ||
+        data.status == 'Out for Delivery' ||
+        data.status == 'Delivered' ||
+        data.status == 'Cancelled' ||
+        data.status == 'Returned'
+      ) &&
+      data.subtotal is number && data.subtotal >= 0 && data.subtotal <= 50000000 &&
+      data.shippingFee is number && data.shippingFee >= 0 && data.shippingFee <= 50000 &&
+      data.discountAmount is number && data.discountAmount >= 0 && data.discountAmount <= 10000000 &&
+      data.totalAmount is number && data.totalAmount >= 0 && data.totalAmount <= 50000000 &&
+      data.itemSummary is string && data.itemSummary.size() >= 2 && data.itemSummary.size() <= 1000 &&
+      data.itemCount is number && data.itemCount >= 1 && data.itemCount <= 100 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isOrderTerminal(status) {
+      return status == 'Delivered' || status == 'Cancelled' || status == 'Returned';
+    }
+
+    function isValidWishlistItem(data) {
+      return data.keys().hasAll(['userId', 'productId', 'createdAt']) &&
+      data.keys().hasOnly(['userId', 'productId', 'createdAt']) &&
+      data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+      data.productId is string && isValidId(data.productId) &&
+      data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    function isValidStoreSettings(data) {
+      return data.keys().hasAll(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']) &&
+      data.keys().hasOnly(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']) &&
+      data.announcementText is string && data.announcementText.size() >= 5 && data.announcementText.size() <= 200 &&
+      data.freeShippingThreshold is number && data.freeShippingThreshold >= 0 && data.freeShippingThreshold <= 100000 &&
+      data.codEnabled is bool &&
+      data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    // 4. Collection Rules
+
+    // Admins lookup collection (read-only by self or admin; never self-writable)
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // Products Catalog
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(productId) && isValidProduct(incoming()) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'slug', 'description', 'category', 'subcategory',
+          'price', 'originalPrice', 'discount', 'images', 'thumbnail',
+          'stock', 'sku', 'colors', 'fabric', 'occasion', 'weave',
+          'featured', 'newArrival', 'rating', 'reviewCount', 'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+
+    // Isolated Customer PII Profile
+    match /users/{userId}/private/{docId} {
+      allow get: if isVerifiedUser() && isValidId(userId) && isValidId(docId) && (request.auth.uid == userId || isAdmin());
+      allow list: if false;
+      allow create: if isVerifiedUser() && isValidId(userId) && isValidId(docId) && request.auth.uid == userId && isValidUserPrivateProfile(incoming(), userId);
+      allow update: if isVerifiedUser() && isValidId(userId) && isValidId(docId) && request.auth.uid == userId && isValidUserPrivateProfile(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'phone', 'addressLine', 'city', 'state', 'pincode', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow get: if isVerifiedUser() && isValidId(orderId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && isValidId(orderId) && isValidOrder(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        (incoming().status == 'Pending' || incoming().status == 'Confirmed') &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(orderId) && isValidOrder(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().orderNumber == existing().orderNumber &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().totalAmount == existing().totalAmount &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Admin Order Fulfilment Update
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'paymentStatus', 'updatedAt'])) ||
+          // Action 2: Customer Cancel Pending Order (Terminal State Locked)
+          (existing().userId == request.auth.uid &&
+            !isOrderTerminal(existing().status) &&
+            (existing().status == 'Pending' || existing().status == 'Confirmed') &&
+            incoming().status == 'Cancelled' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+
+    // Wishlists
+    match /wishlists/{wishlistId} {
+      allow get: if isVerifiedUser() && isValidId(wishlistId) && existing().userId == request.auth.uid;
+      allow list: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && isValidId(wishlistId) && isValidWishlistItem(incoming()) &&
+        exists(/databases/$(database)/documents/products/$(incoming().productId));
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(wishlistId) && existing().userId == request.auth.uid;
+    }
+
+    // Store Settings
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if false;
+      allow create: if isAdmin() && isValidId(settingId) && isValidStoreSettings(incoming());
+      allow update: if isAdmin() && isValidId(settingId) && isValidStoreSettings(incoming()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']);
+      allow delete: if false;
+    }
+  }
+}

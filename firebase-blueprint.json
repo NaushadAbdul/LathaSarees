@@ -1,0 +1,173 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A luxury saree or jewelry product in the Latha catalog.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 140, "pattern": "^[a-z0-9\\-]+$" },
+        "description": { "type": "string", "minLength": 10, "maxLength": 2000 },
+        "category": { "type": "string", "enum": ["Sarees", "Jewelry"] },
+        "subcategory": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "discount": { "type": "number" },
+        "images": { "type": "array" },
+        "thumbnail": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "stock": { "type": "number" },
+        "sku": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "colors": { "type": "array" },
+        "fabric": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "occasion": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "weave": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "featured": { "type": "boolean" },
+        "newArrival": { "type": "boolean" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "slug",
+        "description",
+        "category",
+        "subcategory",
+        "price",
+        "originalPrice",
+        "discount",
+        "thumbnail",
+        "stock",
+        "sku",
+        "fabric",
+        "occasion",
+        "featured",
+        "newArrival",
+        "createdAt"
+      ]
+    },
+    "UserPrivateProfile": {
+      "title": "UserPrivateProfile",
+      "description": "Private customer profile and address details isolated for PII security.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "email": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "phone": { "type": "string", "minLength": 0, "maxLength": 25 },
+        "addressLine": { "type": "string", "minLength": 0, "maxLength": 250 },
+        "city": { "type": "string", "minLength": 0, "maxLength": 80 },
+        "state": { "type": "string", "minLength": 0, "maxLength": 80 },
+        "pincode": { "type": "string", "minLength": 0, "maxLength": 12 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "updatedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order record with shipping details and order status.",
+      "type": "object",
+      "properties": {
+        "orderNumber": { "type": "string", "minLength": 4, "maxLength": 40 },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "customerName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "customerEmail": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "customerPhone": { "type": "string", "minLength": 6, "maxLength": 20 },
+        "shippingAddress": { "type": "string", "minLength": 5, "maxLength": 300 },
+        "city": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "state": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "pincode": { "type": "string", "minLength": 4, "maxLength": 12 },
+        "paymentMethod": { "type": "string", "enum": ["Online Payment", "Cash on Delivery"] },
+        "paymentStatus": { "type": "string", "enum": ["Paid", "Pending", "COD"] },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Confirmed",
+            "Processing",
+            "Shipped",
+            "Out for Delivery",
+            "Delivered",
+            "Cancelled",
+            "Returned"
+          ]
+        },
+        "subtotal": { "type": "number" },
+        "shippingFee": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "itemSummary": { "type": "string", "minLength": 2, "maxLength": 1000 },
+        "itemCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "orderNumber",
+        "userId",
+        "customerName",
+        "customerEmail",
+        "customerPhone",
+        "shippingAddress",
+        "city",
+        "state",
+        "pincode",
+        "paymentMethod",
+        "paymentStatus",
+        "status",
+        "subtotal",
+        "shippingFee",
+        "discountAmount",
+        "totalAmount",
+        "itemSummary",
+        "itemCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WishlistItem": {
+      "title": "WishlistItem",
+      "description": "Saved product in a user's wishlist.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "productId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "createdAt"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global store announcement and configuration managed by admin.",
+      "type": "object",
+      "properties": {
+        "announcementText": { "type": "string", "minLength": 5, "maxLength": 200 },
+        "freeShippingThreshold": { "type": "number" },
+        "codEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["announcementText", "freeShippingThreshold", "codEnabled", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Publicly readable catalog of sarees and jewelry; writable only by verified admin."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateProfile" },
+      "description": "Isolated customer PII profile and saved address."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer orders; owners can create and read their own orders, admins can read and update status."
+    },
+    "/wishlists/{wishlistId}": {
+      "schema": { "$ref": "#/entities/WishlistItem" },
+      "description": "User wishlist items; accessible strictly to owner."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/StoreSettings" },
+      "description": "Publicly readable store settings (announcement bar, shipping threshold); writable only by admin."
+    }
+  }
+}
