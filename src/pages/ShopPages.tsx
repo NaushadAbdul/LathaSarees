@@ -32,7 +32,17 @@ export const CatalogPage: React.FC<{
   );
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(initialSub);
   const [selectedOccasion, setSelectedOccasion] = useState<string>('All');
-  const [maxPrice, setMaxPrice] = useState<number>(25000);
+
+  // Dynamic maximum price from the catalog so higher priced jewelry is never cut off
+  const catalogMaxPrice = useMemo(() => {
+    if (!products.length) return 200000;
+    const prices = products.map((p) => Number(p.price) || 0);
+    const highest = Math.max(...prices, 0);
+    return Math.max(highest, 100000);
+  }, [products]);
+
+  const [isPriceFilterActive, setIsPriceFilterActive] = useState<boolean>(false);
+  const [maxPrice, setMaxPrice] = useState<number>(200000);
   const [onlyNew, setOnlyNew] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'rating'>(
     'featured'
@@ -52,39 +62,76 @@ export const CatalogPage: React.FC<{
   }, [collectionSlug]);
 
   const subcategories = useMemo(() => {
-    const relevant = products.filter(
-      (p) => selectedCategory === 'All' || p.category === selectedCategory
-    );
-    return ['All', ...Array.from(new Set(relevant.map((p) => p.subcategory)))];
+    const relevant = products.filter((p) => {
+      if (selectedCategory === 'All') return true;
+      return (p.category || '').trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+    });
+    return ['All', ...Array.from(new Set(relevant.map((p) => (p.subcategory || '').trim()).filter(Boolean)))];
   }, [products, selectedCategory]);
 
   const occasions = useMemo(() => {
-    return ['All', ...Array.from(new Set(products.map((p) => p.occasion)))];
-  }, [products]);
+    const relevant = products.filter((p) => {
+      if (selectedCategory === 'All') return true;
+      return (p.category || '').trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+    });
+    return ['All', ...Array.from(new Set(relevant.map((p) => (p.occasion || '').trim()).filter(Boolean)))];
+  }, [products, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
-        if (selectedCategory !== 'All' && p.category !== selectedCategory) return false;
-        if (selectedSubcategory !== 'All' && p.subcategory !== selectedSubcategory)
-          return false;
-        if (selectedOccasion !== 'All' && p.occasion !== selectedOccasion) return false;
-        if (p.price > maxPrice) return false;
+        // Category filter (case-insensitive & trimmed)
+        if (selectedCategory !== 'All') {
+          const pCat = (p.category || '').trim().toLowerCase();
+          const targetCat = selectedCategory.trim().toLowerCase();
+          if (pCat !== targetCat) return false;
+        }
+
+        // Subcategory filter (flexible matching)
+        if (selectedSubcategory !== 'All') {
+          const pSub = (p.subcategory || '').trim().toLowerCase();
+          const targetSub = selectedSubcategory.trim().toLowerCase();
+          if (pSub !== targetSub && !pSub.startsWith(targetSub.slice(0, 4)) && !targetSub.startsWith(pSub.slice(0, 4))) {
+            return false;
+          }
+        }
+
+        // Occasion filter
+        if (selectedOccasion !== 'All') {
+          const pOcc = (p.occasion || '').trim().toLowerCase();
+          const targetOcc = selectedOccasion.trim().toLowerCase();
+          if (pOcc !== targetOcc) return false;
+        }
+
+        // Price filter (ONLY applied if customer adjusted price slider)
+        if (isPriceFilterActive) {
+          const priceNum = Number(p.price) || 0;
+          if (priceNum > maxPrice) return false;
+        }
+
+        // New arrivals only
         if (onlyNew && !p.newArrival) return false;
+
+        // Curated collection filtering
         if (collectionSlug) {
           if (collectionSlug === 'temple-jewelry') {
-            return p.category === 'Jewelry';
+            return (p.category || '').trim().toLowerCase() === 'jewelry';
           }
           if (p.collectionSlug && p.collectionSlug !== collectionSlug) {
             return false;
           }
         }
+
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === 'price-asc') return a.price - b.price;
-        if (sortBy === 'price-desc') return b.price - a.price;
-        if (sortBy === 'rating') return b.rating - a.rating;
+        const priceA = Number(a.price) || 0;
+        const priceB = Number(b.price) || 0;
+        const ratingA = Number(a.rating) || 0;
+        const ratingB = Number(b.rating) || 0;
+        if (sortBy === 'price-asc') return priceA - priceB;
+        if (sortBy === 'price-desc') return priceB - priceA;
+        if (sortBy === 'rating') return ratingB - ratingA;
         return Number(b.featured) - Number(a.featured);
       });
   }, [
@@ -92,6 +139,7 @@ export const CatalogPage: React.FC<{
     selectedCategory,
     selectedSubcategory,
     selectedOccasion,
+    isPriceFilterActive,
     maxPrice,
     onlyNew,
     collectionSlug,
@@ -118,7 +166,8 @@ export const CatalogPage: React.FC<{
     setSelectedCategory(fixedCategory || 'All');
     setSelectedSubcategory('All');
     setSelectedOccasion('All');
-    setMaxPrice(25000);
+    setIsPriceFilterActive(false);
+    setMaxPrice(catalogMaxPrice);
     setOnlyNew(false);
     setSortBy('featured');
   };
@@ -274,21 +323,40 @@ export const CatalogPage: React.FC<{
             </div>
 
             <div>
-              <label className="block font-semibold text-[#33221C] mb-2 tabular-nums">
-                Maximum Price: ₹{maxPrice.toLocaleString('en-IN')}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="font-semibold text-[#33221C] tabular-nums">
+                  {isPriceFilterActive
+                    ? `Maximum Price: ₹${maxPrice.toLocaleString('en-IN')}`
+                    : `Price: All (Up to ₹${catalogMaxPrice.toLocaleString('en-IN')})`}
+                </label>
+                {isPriceFilterActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPriceFilterActive(false);
+                      setMaxPrice(catalogMaxPrice);
+                    }}
+                    className="text-[11px] text-[#5A2630] underline hover:text-[#33221C]"
+                  >
+                    Clear limit
+                  </button>
+                )}
+              </div>
               <input
                 type="range"
-                min={2500}
-                max={25000}
+                min={0}
+                max={catalogMaxPrice}
                 step={500}
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                value={isPriceFilterActive ? maxPrice : catalogMaxPrice}
+                onChange={(e) => {
+                  setMaxPrice(Number(e.target.value));
+                  setIsPriceFilterActive(true);
+                }}
                 className="w-full accent-[#4A1C24]"
               />
               <div className="flex justify-between text-[11px] text-[#806B5E] mt-1 tabular-nums">
-                <span>₹2,500</span>
-                <span>₹25,000</span>
+                <span>₹0</span>
+                <span>₹{catalogMaxPrice.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -402,7 +470,11 @@ export const ProductDetailsPage: React.FC = () => {
 
   const isWishlisted = wishlistIds.includes(product.id);
   const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
+    .filter(
+      (p) =>
+        (p.category || '').trim().toLowerCase() === (product.category || '').trim().toLowerCase() &&
+        p.id !== product.id
+    )
     .slice(0, 4);
 
   const handleCheckPincode = (e: React.FormEvent) => {
