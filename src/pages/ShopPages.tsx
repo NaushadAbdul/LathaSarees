@@ -128,7 +128,7 @@ export const CatalogPage: React.FC<{
       {/* Editorial Category Header Banner */}
       <div
         className={`relative overflow-hidden border-b border-[#B99A62]/30 py-12 sm:py-18 px-4 sm:px-8 text-center transition-colors ${
-          fixedCategory === 'Sarees'
+          fixedCategory === 'Sarees' || fixedCategory === 'Jewelry'
             ? 'bg-[#2C1814] text-[#F7F0E6]'
             : 'bg-[#EFE2D1] text-[#33221C]'
         }`}
@@ -137,6 +137,19 @@ export const CatalogPage: React.FC<{
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <video
               src={BRAND_IMAGES.sareesVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover opacity-20"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#2C1814]/75 via-[#2C1814]/60 to-[#2C1814]/80" />
+          </div>
+        )}
+        {fixedCategory === 'Jewelry' && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <video
+              src={BRAND_IMAGES.jewelryVideo}
               autoPlay
               loop
               muted
@@ -158,7 +171,7 @@ export const CatalogPage: React.FC<{
           </h1>
           <p
             className={`text-xs sm:text-sm mt-3 leading-relaxed ${
-              fixedCategory === 'Sarees' ? 'text-[#F7F0E6]/85' : 'text-[#806B5E]'
+              fixedCategory === 'Sarees' || fixedCategory === 'Jewelry' ? 'text-[#F7F0E6]/85' : 'text-[#806B5E]'
             }`}
           >
             {pageSubtitle}

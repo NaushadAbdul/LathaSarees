@@ -41,6 +41,10 @@ const PRESET_HERO_VIDEOS = [
     url: BRAND_IMAGES.sareesVideo,
   },
   {
+    label: 'Royal Gold Jewelry Video (Woman_showcasing_gold_jewellery.mp4)',
+    url: BRAND_IMAGES.jewelryVideo,
+  },
+  {
     label: 'Traditional Silk Loom Weaving (MP4)',
     url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-woman-weaving-on-a-loom-41804-large.mp4',
   },

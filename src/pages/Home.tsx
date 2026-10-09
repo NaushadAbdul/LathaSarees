@@ -140,8 +140,8 @@ export const Home: React.FC = () => {
     },
     {
       ...HERO_SLIDES[2],
-      mediaType: 'image' as const,
-      mediaUrl: HERO_SLIDES[2].image,
+      mediaType: 'video' as const,
+      mediaUrl: BRAND_IMAGES.jewelryVideo,
     },
   ];
 

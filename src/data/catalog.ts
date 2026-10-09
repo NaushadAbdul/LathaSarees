@@ -24,6 +24,7 @@ export interface Product {
 }
 
 import sareesVideo from '../assets/images/sareesvideo.mp4';
+import jewelryVideo from '../assets/images/Woman_showcasing_gold_jewellery_1080p_20261010025311_gwr_video_mvp.mp4';
 
 export const BRAND_IMAGES = {
   heroBridal: '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
@@ -33,6 +34,7 @@ export const BRAND_IMAGES = {
   jewelryLakshmiNecklace: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
   jewelryKundanBangles: '/src/assets/images/jewelry_kundan_bangles_1791477012771.jpg',
   sareesVideo: sareesVideo,
+  jewelryVideo: jewelryVideo,
 };
 
 export const INITIAL_PRODUCTS: Product[] = [
