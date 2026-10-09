@@ -87,24 +87,22 @@ export const AdminDashboard: React.FC<{
     }
   }, [initialTab]);
 
-  // Product Form State
+  // Product Form State (Clean by default - admin fills only what they know)
   const [editingId, setEditingId] = useState<string | undefined>(undefined);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<'Sarees' | 'Jewelry'>('Sarees');
-  const [subcategory, setSubcategory] = useState('Banarasi');
-  const [price, setPrice] = useState(12900);
-  const [originalPrice, setOriginalPrice] = useState(16500);
-  const [stock, setStock] = useState(8);
-  const [sku, setSku] = useState('LTH-NEW-009');
-  const [fabric, setFabric] = useState('Pure Mulberry Silk');
-  const [occasion, setOccasion] = useState('Wedding & Festive');
-  const [weave, setWeave] = useState('Handloom Zari');
-  const [colorsInput, setColorsInput] = useState('Deep Wine, Antique Gold');
-  const [thumbnail, setThumbnail] = useState(BRAND_IMAGES.sareeBanarasiCrimson);
-  const [description, setDescription] = useState(
-    'Handcrafted heirloom creation curated exclusively for Latha Sarees & Jewelry patrons.'
-  );
-  const [featured, setFeatured] = useState(true);
+  const [subcategory, setSubcategory] = useState('');
+  const [price, setPrice] = useState<number | ''>('');
+  const [originalPrice, setOriginalPrice] = useState<number | ''>('');
+  const [stock, setStock] = useState<number | ''>('');
+  const [sku, setSku] = useState('');
+  const [fabric, setFabric] = useState('');
+  const [occasion, setOccasion] = useState('');
+  const [weave, setWeave] = useState('');
+  const [colorsInput, setColorsInput] = useState('');
+  const [thumbnail, setThumbnail] = useState('');
+  const [description, setDescription] = useState('');
+  const [featured, setFeatured] = useState(false);
   const [newArrival, setNewArrival] = useState(true);
 
   // Catalog Browsing & Search State
@@ -266,21 +264,21 @@ export const AdminDashboard: React.FC<{
 
   const handleEditProduct = (p: Product) => {
     setEditingId(p.id);
-    setName(p.name);
-    setCategory(p.category);
-    setSubcategory(p.subcategory);
-    setPrice(p.price);
-    setOriginalPrice(p.originalPrice);
-    setStock(p.stock);
-    setSku(p.sku);
-    setFabric(p.fabric);
-    setOccasion(p.occasion);
-    setWeave(p.weave);
-    setColorsInput(p.colors.join(', '));
-    setThumbnail(p.thumbnail);
-    setDescription(p.description);
-    setFeatured(p.featured);
-    setNewArrival(p.newArrival);
+    setName(p.name || '');
+    setCategory(p.category || 'Sarees');
+    setSubcategory(p.subcategory || '');
+    setPrice(p.price ?? '');
+    setOriginalPrice(p.originalPrice ?? '');
+    setStock(p.stock !== undefined ? p.stock : '');
+    setSku(p.sku || '');
+    setFabric(p.fabric || '');
+    setOccasion(p.occasion || '');
+    setWeave(p.weave || '');
+    setColorsInput(p.colors ? p.colors.join(', ') : '');
+    setThumbnail(p.thumbnail || '');
+    setDescription(p.description || '');
+    setFeatured(p.featured ?? false);
+    setNewArrival(p.newArrival ?? false);
     setActiveTab('add-product');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -289,55 +287,91 @@ export const AdminDashboard: React.FC<{
     setEditingId(undefined);
     setName('');
     setCategory('Sarees');
-    setSubcategory('Banarasi');
-    setPrice(12900);
-    setOriginalPrice(16500);
-    setStock(8);
-    setSku(`LTH-SAR-${Math.floor(100 + Math.random() * 900)}`);
-    setFabric('Pure Mulberry Silk');
-    setOccasion('Wedding & Festive');
-    setWeave('Handloom Zari');
-    setColorsInput('Deep Wine, Antique Gold');
-    setThumbnail(BRAND_IMAGES.sareeBanarasiCrimson);
-    setDescription(
-      'Handcrafted heirloom creation curated exclusively for Latha Sarees & Jewelry patrons.'
-    );
-    setFeatured(true);
+    setSubcategory('');
+    setPrice('');
+    setOriginalPrice('');
+    setStock('');
+    setSku('');
+    setFabric('');
+    setOccasion('');
+    setWeave('');
+    setColorsInput('');
+    setThumbnail('');
+    setDescription('');
+    setFeatured(false);
     setNewArrival(true);
+  };
+
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (typeof event.target?.result === 'string') {
+        setThumbnail(event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      alert('Please enter at least a Product Name.');
+      return;
+    }
+
+    const numPrice = price !== '' && !isNaN(Number(price)) ? Number(price) : 0;
+    const numOriginalPrice =
+      originalPrice !== '' && !isNaN(Number(originalPrice))
+        ? Number(originalPrice)
+        : numPrice;
     const calcDiscount =
-      originalPrice > price
-        ? Math.round(((originalPrice - price) / originalPrice) * 100)
+      numOriginalPrice > numPrice && numOriginalPrice > 0
+        ? Math.round(((numOriginalPrice - numPrice) / numOriginalPrice) * 100)
         : 0;
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+
+    const slug =
+      trimmedName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || `prod-${Date.now()}`;
+
+    const finalSku =
+      sku.trim() ||
+      `LTH-${category === 'Sarees' ? 'SAR' : 'JWL'}-${Math.floor(100 + Math.random() * 900)}`;
+    const finalSubcategory =
+      subcategory.trim() || (category === 'Sarees' ? 'Saree' : 'Jewelry');
+    const finalThumbnail =
+      thumbnail.trim() ||
+      (category === 'Sarees'
+        ? BRAND_IMAGES.sareeBanarasiCrimson
+        : BRAND_IMAGES.jewelryTempleJhumka);
+    const finalColors = colorsInput.trim()
+      ? colorsInput.split(',').map((c) => c.trim()).filter(Boolean)
+      : ['Standard'];
+    const finalStock =
+      stock !== '' && !isNaN(Number(stock)) ? Number(stock) : 1;
 
     await adminSaveProduct({
       id: editingId,
-      name,
+      name: trimmedName,
       slug,
-      description,
+      description: description.trim() || trimmedName,
       category,
-      subcategory,
-      price: Number(price),
-      originalPrice: Number(originalPrice),
+      subcategory: finalSubcategory,
+      price: numPrice,
+      originalPrice: numOriginalPrice,
       discount: calcDiscount,
-      images: [thumbnail],
-      thumbnail,
-      stock: Number(stock),
-      sku,
-      colors: colorsInput
-        .split(',')
-        .map((c) => c.trim())
-        .filter(Boolean),
-      fabric,
-      occasion,
-      weave,
+      images: [finalThumbnail],
+      thumbnail: finalThumbnail,
+      stock: finalStock,
+      sku: finalSku,
+      colors: finalColors,
+      fabric: fabric.trim() || 'Handcrafted',
+      occasion: occasion.trim() || 'Festive & Occasion',
+      weave: weave.trim() || 'Artisanal',
       featured,
       newArrival,
       rating: 4.9,
@@ -813,33 +847,31 @@ export const AdminDashboard: React.FC<{
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveProductSubmit} className="space-y-4 text-xs">
+                <form onSubmit={handleSaveProductSubmit} noValidate className="space-y-4 text-xs">
                   <div>
                     <label className="block font-medium text-[#33221C] mb-1">
                       Product Name *
                     </label>
                     <input
                       type="text"
-                      required
-                      minLength={2}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Royal Kanchipuram Pure Zari Silk Saree"
-                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                      placeholder="e.g. Royal Silk Saree, Gold Haram..."
+                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Category *
+                        Category
                       </label>
                       <select
                         value={category}
                         onChange={(e) =>
                           setCategory(e.target.value as 'Sarees' | 'Jewelry')
                         }
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       >
                         <option value="Sarees">Sarees</option>
                         <option value="Jewelry">Jewelry</option>
@@ -847,15 +879,14 @@ export const AdminDashboard: React.FC<{
                     </div>
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Subcategory *
+                        Subcategory <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         value={subcategory}
                         onChange={(e) => setSubcategory(e.target.value)}
-                        placeholder="Banarasi, Kanchipuram, Jhumkas, Necklaces..."
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        placeholder="e.g. Banarasi, Kanchipuram, Jhumkas..."
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       />
                     </div>
                   </div>
@@ -867,37 +898,43 @@ export const AdminDashboard: React.FC<{
                       </label>
                       <input
                         type="number"
-                        required
-                        min={100}
+                        min={0}
                         value={price}
-                        onChange={(e) => setPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums"
+                        onChange={(e) =>
+                          setPrice(e.target.value === '' ? '' : Number(e.target.value))
+                        }
+                        placeholder="e.g. 12900"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums text-[#33221C]"
                       />
                     </div>
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Original MRP (₹) *
+                        Original MRP (₹) <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="number"
-                        required
-                        min={100}
+                        min={0}
                         value={originalPrice}
-                        onChange={(e) => setOriginalPrice(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums"
+                        onChange={(e) =>
+                          setOriginalPrice(e.target.value === '' ? '' : Number(e.target.value))
+                        }
+                        placeholder="Defaults to price"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums text-[#33221C]"
                       />
                     </div>
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Stock Qty *
+                        Stock Qty <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="number"
-                        required
                         min={0}
                         value={stock}
-                        onChange={(e) => setStock(Number(e.target.value))}
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums"
+                        onChange={(e) =>
+                          setStock(e.target.value === '' ? '' : Number(e.target.value))
+                        }
+                        placeholder="Defaults to 1"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 tabular-nums text-[#33221C]"
                       />
                     </div>
                   </div>
@@ -905,28 +942,26 @@ export const AdminDashboard: React.FC<{
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Fabric / Material *
+                        Fabric / Material <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         value={fabric}
                         onChange={(e) => setFabric(e.target.value)}
-                        placeholder="Pure Silk, 22K Gold Plated Brass, Kemp Ruby..."
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        placeholder="e.g. Pure Silk, Gold Plated Brass..."
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       />
                     </div>
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Weave / Craft *
+                        Weave / Craft <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         value={weave}
                         onChange={(e) => setWeave(e.target.value)}
-                        placeholder="Handloom Zari, Temple Nakshi, Jadau..."
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        placeholder="e.g. Handloom Zari, Temple Nakshi..."
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       />
                     </div>
                   </div>
@@ -934,67 +969,79 @@ export const AdminDashboard: React.FC<{
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        SKU Code *
+                        SKU Code <span className="text-[#806B5E] font-normal">(Optional - auto-generated)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         value={sku}
                         onChange={(e) => setSku(e.target.value)}
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        placeholder="Leave blank to auto-generate"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       />
                     </div>
                     <div>
                       <label className="block font-medium text-[#33221C] mb-1">
-                        Colors (comma-separated) *
+                        Colors <span className="text-[#806B5E] font-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
-                        required
                         value={colorsInput}
                         onChange={(e) => setColorsInput(e.target.value)}
-                        placeholder="Crimson Red, Antique Gold"
-                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                        placeholder="e.g. Red, Maroon, Gold"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block font-medium text-[#33221C] mb-1">
-                      Product Image (Select Studio Preset or Enter Custom Image URL) *
+                      Product Image <span className="text-[#806B5E] font-normal">(Optional)</span>
                     </label>
-                    <select
-                      value={thumbnail}
-                      onChange={(e) => setThumbnail(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 mb-2"
-                    >
-                      {PRESET_IMAGES.map((img) => (
-                        <option key={img.label} value={img.url}>
-                          Studio Preset: {img.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      required
-                      value={thumbnail}
-                      onChange={(e) => setThumbnail(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
-                    />
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <label className="px-3 py-2 bg-[#4A1C24] text-[#F7F0E6] text-xs cursor-pointer hover:bg-[#5A2630] flex items-center gap-1.5 shrink-0 transition-colors">
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>Upload Image File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProductImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <select
+                          value={thumbnail}
+                          onChange={(e) => setThumbnail(e.target.value)}
+                          className="flex-1 min-w-[180px] px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-xs text-[#33221C]"
+                        >
+                          <option value="">-- Or Choose Preset Image (Optional) --</option>
+                          {PRESET_IMAGES.map((img) => (
+                            <option key={img.label} value={img.url}>
+                              {img.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <input
+                        type="text"
+                        value={thumbnail}
+                        onChange={(e) => setThumbnail(e.target.value)}
+                        placeholder="Or paste an image web link (https://...)"
+                        className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block font-medium text-[#33221C] mb-1">
-                      Editorial Description *
+                      Description <span className="text-[#806B5E] font-normal">(Optional)</span>
                     </label>
                     <textarea
-                      rows={3}
-                      required
-                      minLength={10}
+                      rows={2}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
+                      placeholder="Optional notes or description about this piece..."
+                      className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40 text-[#33221C]"
                     />
                   </div>
 
@@ -1058,7 +1105,7 @@ export const AdminDashboard: React.FC<{
                   <div className="bg-[#FFFDFC] border border-[#B99A62]/25 overflow-hidden shadow-sm max-w-sm mx-auto">
                     <div className="relative aspect-[3/4] bg-[#2C1814] overflow-hidden">
                       <img
-                        src={thumbnail}
+                        src={thumbnail || (category === 'Sarees' ? BRAND_IMAGES.sareeBanarasiCrimson : BRAND_IMAGES.jewelryTempleJhumka)}
                         alt={name || 'Preview'}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
@@ -1069,9 +1116,9 @@ export const AdminDashboard: React.FC<{
                             NEW
                           </span>
                         )}
-                        {originalPrice > price && (
+                        {Number(originalPrice) > Number(price) && Number(originalPrice) > 0 && (
                           <span className="bg-[#B99A62] text-[#1E110E] text-[10px] font-semibold tracking-wider px-2 py-0.5">
-                            {Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
+                            {Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100)}% OFF
                           </span>
                         )}
                       </div>
@@ -1079,8 +1126,8 @@ export const AdminDashboard: React.FC<{
 
                     <div className="p-4 space-y-2 text-xs">
                       <div className="flex items-center justify-between text-[#806B5E] text-[11px]">
-                        <span>{category} · {subcategory}</span>
-                        <span>{fabric}</span>
+                        <span>{category} {subcategory ? `· ${subcategory}` : ''}</span>
+                        <span>{fabric || 'Handcrafted'}</span>
                       </div>
 
                       <h4 className="font-serif-luxury text-lg text-[#33221C] line-clamp-1">
@@ -1091,7 +1138,7 @@ export const AdminDashboard: React.FC<{
                         <span className="text-base font-semibold text-[#33221C] tabular-nums">
                           ₹{Number(price || 0).toLocaleString('en-IN')}
                         </span>
-                        {originalPrice > price && (
+                        {Number(originalPrice) > Number(price) && Number(originalPrice) > 0 && (
                           <span className="text-xs text-[#806B5E] line-through tabular-nums">
                             ₹{Number(originalPrice || 0).toLocaleString('en-IN')}
                           </span>
@@ -1099,9 +1146,9 @@ export const AdminDashboard: React.FC<{
                       </div>
 
                       <div className="pt-2 border-t border-[#B99A62]/20 flex items-center justify-between text-[11px]">
-                        <span className="text-[#806B5E]">SKU: {sku}</span>
-                        <span className={stock > 0 ? 'text-emerald-700 font-medium' : 'text-rose-700 font-medium'}>
-                          {stock > 0 ? `In Stock (${stock})` : 'Out of Stock'}
+                        <span className="text-[#806B5E]">SKU: {sku || 'Auto-generated'}</span>
+                        <span className={Number(stock || 1) > 0 ? 'text-emerald-700 font-medium' : 'text-rose-700 font-medium'}>
+                          {Number(stock || 1) > 0 ? `Stock: ${stock || 1}` : 'Sold Out'}
                         </span>
                       </div>
                     </div>
