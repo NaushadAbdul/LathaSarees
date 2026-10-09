@@ -23,6 +23,8 @@ export interface Product {
   collectionSlug?: string;
 }
 
+import sareesVideo from '../assets/images/sareesvideo.mp4';
+
 export const BRAND_IMAGES = {
   heroBridal: '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
   sareeBanarasiCrimson: '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
@@ -30,6 +32,7 @@ export const BRAND_IMAGES = {
   jewelryTempleJhumka: '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
   jewelryLakshmiNecklace: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
   jewelryKundanBangles: '/src/assets/images/jewelry_kundan_bangles_1791477012771.jpg',
+  sareesVideo: sareesVideo,
 };
 
 export const INITIAL_PRODUCTS: Product[] = [

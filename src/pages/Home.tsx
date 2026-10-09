@@ -126,8 +126,8 @@ export const Home: React.FC = () => {
       subtitleGold: settings.heroSubtitleGold || HERO_SLIDES[0].subtitleGold,
       kicker: settings.heroKicker || HERO_SLIDES[0].kicker,
       description: settings.heroDescription || HERO_SLIDES[0].description,
-      mediaType: settings.heroMediaType || 'image',
-      mediaUrl: settings.heroMediaUrl || HERO_SLIDES[0].image,
+      mediaType: settings.heroMediaType || 'video',
+      mediaUrl: settings.heroMediaUrl || BRAND_IMAGES.sareesVideo,
       primaryCtaText: settings.heroPrimaryCtaText || HERO_SLIDES[0].primaryCtaText,
       primaryCtaLink: settings.heroPrimaryCtaLink || HERO_SLIDES[0].primaryCtaLink,
       secondaryCtaText: settings.heroSecondaryCtaText || HERO_SLIDES[0].secondaryCtaText,
@@ -135,8 +135,8 @@ export const Home: React.FC = () => {
     },
     {
       ...HERO_SLIDES[1],
-      mediaType: 'image' as const,
-      mediaUrl: HERO_SLIDES[1].image,
+      mediaType: 'video' as const,
+      mediaUrl: BRAND_IMAGES.sareesVideo,
     },
     {
       ...HERO_SLIDES[2],

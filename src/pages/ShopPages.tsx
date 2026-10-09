@@ -15,7 +15,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { CURATED_COLLECTIONS } from '../data/catalog';
+import { CURATED_COLLECTIONS, BRAND_IMAGES } from '../data/catalog';
 import { ProductCard } from '../components/ProductCard';
 import { LotusOrnament } from '../components/Navbar';
 
@@ -126,18 +126,41 @@ export const CatalogPage: React.FC<{
   return (
     <div className="bg-[#F7F0E6] min-h-screen pb-20">
       {/* Editorial Category Header Banner */}
-      <div className="bg-[#EFE2D1] border-b border-[#B99A62]/30 py-12 sm:py-16 px-4 sm:px-8 text-center">
-        <div className="max-w-3xl mx-auto">
+      <div
+        className={`relative overflow-hidden border-b border-[#B99A62]/30 py-12 sm:py-18 px-4 sm:px-8 text-center transition-colors ${
+          fixedCategory === 'Sarees'
+            ? 'bg-[#2C1814] text-[#F7F0E6]'
+            : 'bg-[#EFE2D1] text-[#33221C]'
+        }`}
+      >
+        {fixedCategory === 'Sarees' && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <video
+              src={BRAND_IMAGES.sareesVideo}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover opacity-35"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#2C1814]/85 via-[#2C1814]/75 to-[#2C1814]/90" />
+          </div>
+        )}
+        <div className="relative z-10 max-w-3xl mx-auto">
           <div className="flex justify-center text-[#B99A62] mb-2">
             <LotusOrnament className="w-9 h-5" />
           </div>
-          <p className="text-xs tracking-[0.22em] text-[#5A2630] font-medium">
-            LATHA SAREES & JEWELRY
+          <p className="text-xs tracking-[0.22em] text-[#B99A62] font-semibold">
+            LATHA SAREES & JEWELRY · HEIRLOOM ARCHIVE
           </p>
-          <h1 className="font-serif-luxury text-3xl sm:text-5xl text-[#33221C] mt-2 text-balance">
+          <h1 className="font-serif-luxury text-3xl sm:text-5xl mt-2 text-balance">
             {pageTitle}
           </h1>
-          <p className="text-xs sm:text-sm text-[#806B5E] mt-3 leading-relaxed">
+          <p
+            className={`text-xs sm:text-sm mt-3 leading-relaxed ${
+              fixedCategory === 'Sarees' ? 'text-[#F7F0E6]/85' : 'text-[#806B5E]'
+            }`}
+          >
             {pageSubtitle}
           </p>
         </div>

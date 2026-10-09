@@ -37,6 +37,10 @@ const PRESET_IMAGES = [
 
 const PRESET_HERO_VIDEOS = [
   {
+    label: 'Signature Sarees Video (sareesvideo.mp4)',
+    url: BRAND_IMAGES.sareesVideo,
+  },
+  {
     label: 'Traditional Silk Loom Weaving (MP4)',
     url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-woman-weaving-on-a-loom-41804-large.mp4',
   },
