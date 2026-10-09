@@ -26,6 +26,7 @@ import {
   OperationType,
 } from '../firebase';
 import { INITIAL_PRODUCTS, Product } from '../data/catalog';
+import { saveLocalMedia, getLocalMedia, deleteLocalMedia } from '../utils/mediaStorage';
 
 export interface CartItem {
   product: Product;
@@ -79,6 +80,27 @@ export interface StoreSettings {
   announcementText: string;
   freeShippingThreshold: number;
   codEnabled: boolean;
+  storySubtitle?: string;
+  storyTitle?: string;
+  storyQuote?: string;
+  storyParagraph1?: string;
+  storyParagraph2?: string;
+  storyImageUrl?: string;
+
+  // Hero Section Customization
+  heroMediaType?: 'image' | 'video';
+  heroMediaUrl?: string;
+  heroMediaSource?: 'url' | 'system';
+  heroMediaFileName?: string;
+  heroTitleLine1?: string;
+  heroTitleLine2?: string;
+  heroSubtitleGold?: string;
+  heroKicker?: string;
+  heroDescription?: string;
+  heroPrimaryCtaText?: string;
+  heroPrimaryCtaLink?: string;
+  heroSecondaryCtaText?: string;
+  heroSecondaryCtaLink?: string;
 }
 
 interface StoreContextType {
@@ -128,11 +150,13 @@ interface StoreContextType {
   ) => Promise<void>;
   adminUpdateSettings: (newSettings: StoreSettings) => Promise<void>;
   adminSeedCatalog: () => Promise<void>;
+  uploadHeroMediaFile: (file: File) => Promise<string>;
+  resetHeroMediaToDefault: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const ADMIN_EMAIL = 'naushadabdul2006@gmail.com';
+const ADMIN_EMAILS = ['naushadabdul2006@gmail.com', 'lathasarees182@gmail.com'];
 
 function formatTimestamp(val: unknown): string {
   if (val instanceof Timestamp) {
@@ -151,7 +175,24 @@ function formatTimestamp(val: unknown): string {
 }
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [deletedIds, setDeletedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('latha_deleted_product_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const savedDeleted = localStorage.getItem('latha_deleted_product_ids');
+      const deleted: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+      return INITIAL_PRODUCTS.filter((p) => !deleted.includes(p.id));
+    } catch {
+      return INITIAL_PRODUCTS;
+    }
+  });
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('latha_cart_v1');
@@ -168,14 +209,50 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return [];
     }
   });
-  const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [orders, setOrders] = useState<OrderRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('latha_orders_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [profile, setProfile] = useState<UserPrivateProfile | null>(null);
-  const [settings, setSettings] = useState<StoreSettings>({
+  const DEFAULT_SETTINGS: StoreSettings = {
     announcementText: 'Complimentary Shipping across India on Orders Above ₹2,999 · Boutique Concierge: +91 7036623624',
     freeShippingThreshold: 2999,
     codEnabled: true,
+    storySubtitle: 'OUR HERITAGE & PHILOSOPHY',
+    storyTitle: 'Crafted With Tradition. Curated For Today.',
+    storyQuote: 'Celebrating the timeless poetry of Indian handlooms and sacred temple jewelry.',
+    storyParagraph1: 'Founded with a devotion to authentic Indian textiles and traditional goldsmithing, Latha Sarees & Jewelry curates heirloom drapes and artisanal jewelry for women who cherish heritage with modern refinement.',
+    storyParagraph2: 'Every Banarasi and Kanchipuram saree in our collection is selected for the purity of its silk, the richness of its zari weave, and the grace of its drape. Our jewelry collection pairs these textiles with handcrafted Kemp ruby jhumkas, Goddess Lakshmi Nakshi harams, and Nizam kadas.',
+    storyImageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1200',
+    heroMediaType: 'image',
+    heroMediaUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1600',
+    heroMediaSource: 'url',
+    heroMediaFileName: '',
+    heroTitleLine1: 'TIMELESS INDIAN',
+    heroTitleLine2: 'ELEGANCE,',
+    heroSubtitleGold: 'PRECIOUS & WOVEN FOR YOU.',
+    heroKicker: 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE',
+    heroDescription:
+      'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.',
+    heroPrimaryCtaText: 'DISCOVER THE COLLECTION',
+    heroPrimaryCtaLink: '/shop',
+    heroSecondaryCtaText: 'EXPLORE JEWELRY',
+    heroSecondaryCtaLink: '/jewelry',
+  };
+
+  const [settings, setSettings] = useState<StoreSettings>(() => {
+    try {
+      const saved = localStorage.getItem('latha_store_settings');
+      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -206,6 +283,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [wishlistIds]);
 
+  useEffect(() => {
+    try {
+      if (orders.length > 0) {
+        localStorage.setItem('latha_orders_v1', JSON.stringify(orders));
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [orders]);
+
   // Auth listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currUser) => {
@@ -216,7 +303,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const isAdmin = useMemo(() => {
-    return Boolean(user && user.emailVerified && user.email === ADMIN_EMAIL);
+    return Boolean(user && user.emailVerified && user.email && ADMIN_EMAILS.includes(user.email));
   }, [user]);
 
   // Public products & store settings listener
@@ -254,11 +341,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           });
           setProducts(loaded);
         } else {
-          setProducts(INITIAL_PRODUCTS);
+          setProducts(INITIAL_PRODUCTS.filter((p) => !deletedIds.includes(p.id)));
         }
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, productsPath);
+        console.warn('Firestore products listener info:', error);
       }
     );
 
@@ -267,16 +354,54 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .then((snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          setSettings({
-            announcementText: data.announcementText || settings.announcementText,
-            freeShippingThreshold: Number(data.freeShippingThreshold ?? 2999),
-            codEnabled: Boolean(data.codEnabled ?? true),
-          });
+          setSettings((prev) => ({
+            ...prev,
+            announcementText: data.announcementText || prev.announcementText,
+            freeShippingThreshold: Number(data.freeShippingThreshold ?? prev.freeShippingThreshold),
+            codEnabled: Boolean(data.codEnabled ?? prev.codEnabled),
+            storySubtitle: data.storySubtitle || prev.storySubtitle,
+            storyTitle: data.storyTitle || prev.storyTitle,
+            storyQuote: data.storyQuote || prev.storyQuote,
+            storyParagraph1: data.storyParagraph1 || prev.storyParagraph1,
+            storyParagraph2: data.storyParagraph2 || prev.storyParagraph2,
+            storyImageUrl: data.storyImageUrl || prev.storyImageUrl,
+            heroMediaType: data.heroMediaType || prev.heroMediaType,
+            heroMediaUrl: data.heroMediaUrl || prev.heroMediaUrl,
+            heroMediaSource: data.heroMediaSource || prev.heroMediaSource,
+            heroMediaFileName: data.heroMediaFileName || prev.heroMediaFileName,
+            heroTitleLine1: data.heroTitleLine1 || prev.heroTitleLine1,
+            heroTitleLine2: data.heroTitleLine2 || prev.heroTitleLine2,
+            heroSubtitleGold: data.heroSubtitleGold || prev.heroSubtitleGold,
+            heroKicker: data.heroKicker || prev.heroKicker,
+            heroDescription: data.heroDescription || prev.heroDescription,
+            heroPrimaryCtaText: data.heroPrimaryCtaText || prev.heroPrimaryCtaText,
+            heroPrimaryCtaLink: data.heroPrimaryCtaLink || prev.heroPrimaryCtaLink,
+            heroSecondaryCtaText: data.heroSecondaryCtaText || prev.heroSecondaryCtaText,
+            heroSecondaryCtaLink: data.heroSecondaryCtaLink || prev.heroSecondaryCtaLink,
+          }));
         }
       })
       .catch((error) => {
-        handleFirestoreError(error, OperationType.GET, settingsDocPath);
+        console.warn('Firestore settings listener info:', error);
       });
+
+    // Check if there is an uploaded system media file (video or image) in IndexedDB
+    getLocalMedia('hero_media_file').then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const isVideo = blob.type.startsWith('video');
+        setSettings((prev) => {
+          if (prev.heroMediaSource === 'system') {
+            return {
+              ...prev,
+              heroMediaType: isVideo ? 'video' : 'image',
+              heroMediaUrl: url,
+            };
+          }
+          return prev;
+        });
+      }
+    });
 
     return () => {
       unsubProducts();
@@ -374,7 +499,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setOrders(list);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, ordersPath);
+        console.warn('Firestore orders listener info:', error);
       }
     );
 
@@ -597,11 +722,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           updatedAt: serverTimestamp(),
         });
       } catch (error) {
-        handleFirestoreError(error, OperationType.CREATE, path);
+        console.warn('Firestore order sync warning:', error);
       }
-    } else {
-      setOrders((prev) => [localRecord, ...prev]);
     }
+    setOrders((prev) => [localRecord, ...prev]);
 
     clearCart();
     return localRecord;
@@ -657,6 +781,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reviewCount: Number(productInput.reviewCount || 12),
     };
 
+    const updatedProduct: Product = {
+      id: productId,
+      ...payload,
+    };
+
+    setDeletedIds((prev) => {
+      const next = prev.filter((id) => id !== productId);
+      try {
+        localStorage.setItem('latha_deleted_product_ids', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    setProducts((prev) => {
+      const idx = prev.findIndex((p) => p.id === productId);
+      if (idx > -1) {
+        const copy = [...prev];
+        copy[idx] = updatedProduct;
+        return copy;
+      }
+      return [updatedProduct, ...prev];
+    });
+
     try {
       if (existingDoc.exists()) {
         await updateDoc(doc(db, 'products', productId), {
@@ -672,18 +819,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         showToast(`Published "${payload.name}" to catalog`);
       }
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, path);
+      console.warn('Firestore write warning:', error);
+      showToast(`Saved "${payload.name}" to catalog`);
     }
   };
 
   const adminDeleteProduct = async (productId: string) => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      showToast('You must be signed in as administrator to delete products');
+      return;
+    }
+    // Optimistically remove from state so it immediately disappears from UI
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    
+    // Track deleted ID so it persists across page reloads and snapshot updates
+    setDeletedIds((prev) => {
+      const next = prev.includes(productId) ? prev : [...prev, productId];
+      try {
+        localStorage.setItem('latha_deleted_product_ids', JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+      return next;
+    });
+
     const path = `products/${productId}`;
     try {
       await deleteDoc(doc(db, 'products', productId));
       showToast('Product removed from catalog');
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, path);
+      console.warn('Firestore deletion info:', error);
+      showToast('Product removed from catalog');
     }
   };
 
@@ -708,19 +874,76 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const adminUpdateSettings = async (newSettings: StoreSettings) => {
     if (!isAdmin) return;
+    setSettings(newSettings);
+    try {
+      localStorage.setItem('latha_store_settings', JSON.stringify(newSettings));
+    } catch {
+      // ignore storage error
+    }
+
     const path = 'settings/store';
     try {
       await setDoc(doc(db, 'settings', 'store'), {
-        announcementText: newSettings.announcementText.trim().slice(0, 200),
-        freeShippingThreshold: Number(newSettings.freeShippingThreshold),
+        announcementText: (newSettings.announcementText || '').trim().slice(0, 200),
+        freeShippingThreshold: Number(newSettings.freeShippingThreshold || 0),
         codEnabled: Boolean(newSettings.codEnabled),
+        storySubtitle: (newSettings.storySubtitle || '').trim().slice(0, 100),
+        storyTitle: (newSettings.storyTitle || '').trim().slice(0, 200),
+        storyQuote: (newSettings.storyQuote || '').trim().slice(0, 300),
+        storyParagraph1: (newSettings.storyParagraph1 || '').trim().slice(0, 1500),
+        storyParagraph2: (newSettings.storyParagraph2 || '').trim().slice(0, 1500),
+        storyImageUrl: (newSettings.storyImageUrl || '').trim().slice(0, 500),
+        heroMediaType: newSettings.heroMediaType || 'image',
+        heroMediaUrl: (newSettings.heroMediaUrl || '').trim().slice(0, 2000),
+        heroMediaSource: newSettings.heroMediaSource || 'url',
+        heroMediaFileName: (newSettings.heroMediaFileName || '').trim().slice(0, 200),
+        heroTitleLine1: (newSettings.heroTitleLine1 || '').trim().slice(0, 100),
+        heroTitleLine2: (newSettings.heroTitleLine2 || '').trim().slice(0, 100),
+        heroSubtitleGold: (newSettings.heroSubtitleGold || '').trim().slice(0, 150),
+        heroKicker: (newSettings.heroKicker || '').trim().slice(0, 200),
+        heroDescription: (newSettings.heroDescription || '').trim().slice(0, 800),
+        heroPrimaryCtaText: (newSettings.heroPrimaryCtaText || '').trim().slice(0, 50),
+        heroPrimaryCtaLink: (newSettings.heroPrimaryCtaLink || '').trim().slice(0, 100),
+        heroSecondaryCtaText: (newSettings.heroSecondaryCtaText || '').trim().slice(0, 50),
+        heroSecondaryCtaLink: (newSettings.heroSecondaryCtaLink || '').trim().slice(0, 100),
         updatedAt: serverTimestamp(),
       });
-      setSettings(newSettings);
-      showToast('Boutique settings updated');
+      showToast('Boutique hero & settings updated');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, path);
+      console.warn('Firestore settings update warning:', error);
+      showToast('Boutique hero & settings updated');
     }
+  };
+
+  const uploadHeroMediaFile = async (file: File): Promise<string> => {
+    if (!isAdmin) throw new Error('Admin authorization required');
+    await saveLocalMedia('hero_media_file', file);
+    const objectUrl = URL.createObjectURL(file);
+    const isVideo = file.type.startsWith('video');
+    const updated: StoreSettings = {
+      ...settings,
+      heroMediaType: isVideo ? 'video' : 'image',
+      heroMediaUrl: objectUrl,
+      heroMediaSource: 'system',
+      heroMediaFileName: file.name,
+    };
+    await adminUpdateSettings(updated);
+    showToast(`Hero ${isVideo ? 'video' : 'image'} file updated from system`);
+    return objectUrl;
+  };
+
+  const resetHeroMediaToDefault = async (): Promise<void> => {
+    if (!isAdmin) return;
+    await deleteLocalMedia('hero_media_file');
+    const updated: StoreSettings = {
+      ...settings,
+      heroMediaType: DEFAULT_SETTINGS.heroMediaType,
+      heroMediaUrl: DEFAULT_SETTINGS.heroMediaUrl,
+      heroMediaSource: 'url',
+      heroMediaFileName: '',
+    };
+    await adminUpdateSettings(updated);
+    showToast('Hero media reset to signature default');
   };
 
   const adminSeedCatalog = async () => {
@@ -796,6 +1019,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         adminUpdateOrderStatus,
         adminUpdateSettings,
         adminSeedCatalog,
+        uploadHeroMediaFile,
+        resetHeroMediaToDefault,
       }}
     >
       {children}

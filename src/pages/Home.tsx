@@ -113,10 +113,38 @@ const INSTAGRAM_POSTS = [
 ];
 
 export const Home: React.FC = () => {
-  const { products } = useStore();
+  const { products, settings } = useStore();
   const [activeSlide, setActiveSlide] = useState(0);
 
-  const currentHero = HERO_SLIDES[activeSlide];
+  // Dynamic slides where slide 0 adopts the customized boutique hero settings
+  const slides = [
+    {
+      id: 0,
+      titleLine1: settings.heroTitleLine1 || HERO_SLIDES[0].titleLine1,
+      titleLine2: settings.heroTitleLine2 || HERO_SLIDES[0].titleLine2,
+      subtitleGold: settings.heroSubtitleGold || HERO_SLIDES[0].subtitleGold,
+      kicker: settings.heroKicker || HERO_SLIDES[0].kicker,
+      description: settings.heroDescription || HERO_SLIDES[0].description,
+      mediaType: settings.heroMediaType || 'image',
+      mediaUrl: settings.heroMediaUrl || HERO_SLIDES[0].image,
+      primaryCtaText: settings.heroPrimaryCtaText || HERO_SLIDES[0].primaryCtaText,
+      primaryCtaLink: settings.heroPrimaryCtaLink || HERO_SLIDES[0].primaryCtaLink,
+      secondaryCtaText: settings.heroSecondaryCtaText || HERO_SLIDES[0].secondaryCtaText,
+      secondaryCtaLink: settings.heroSecondaryCtaLink || HERO_SLIDES[0].secondaryCtaLink,
+    },
+    {
+      ...HERO_SLIDES[1],
+      mediaType: 'image' as const,
+      mediaUrl: HERO_SLIDES[1].image,
+    },
+    {
+      ...HERO_SLIDES[2],
+      mediaType: 'image' as const,
+      mediaUrl: HERO_SLIDES[2].image,
+    },
+  ];
+
+  const currentHero = slides[activeSlide] || slides[0];
   const curatedProducts = products.slice(0, 5);
 
   return (
@@ -146,16 +174,28 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Main Split Hero Content & Editorial Image */}
+          {/* Main Split Hero Content & Editorial Media */}
           <div className="relative flex-1 grid grid-cols-1 lg:grid-cols-12 items-center">
-            {/* Background Image on Desktop Right / Full Bleed */}
-            <div className="lg:col-span-12 lg:absolute lg:inset-0 overflow-hidden bg-[#E9DAC6]">
-              <img
-                src={currentHero.image}
-                alt={currentHero.titleLine1}
-                referrerPolicy="no-referrer"
-                className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
-              />
+            {/* Background Media on Desktop Right / Full Bleed */}
+            <div className="lg:col-span-12 lg:absolute lg:inset-0 overflow-hidden bg-[#2C1814]">
+              {currentHero.mediaType === 'video' ? (
+                <video
+                  key={currentHero.mediaUrl}
+                  src={currentHero.mediaUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
+                />
+              ) : (
+                <img
+                  src={currentHero.mediaUrl}
+                  alt={currentHero.titleLine1}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
+                />
+              )}
               {/* Soft Warm Ivory Editorial Gradient Scrim on Left for Flawless Text Legibility */}
               <div className="hidden lg:block absolute inset-0 bg-gradient-to-r from-[#F7F0E6] via-[#F7F0E6]/92 to-transparent w-[68%]" />
             </div>
@@ -204,7 +244,7 @@ export const Home: React.FC = () => {
 
           {/* Slide Selector Dots at Bottom Center of Hero */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
-            {HERO_SLIDES.map((slide, idx) => (
+            {slides.map((slide, idx) => (
               <button
                 key={slide.id}
                 type="button"

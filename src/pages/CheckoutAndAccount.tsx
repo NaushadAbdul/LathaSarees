@@ -714,6 +714,16 @@ export const AccountPage: React.FC = () => {
     });
   };
 
+  const myPersonalOrders = React.useMemo(() => {
+    if (!user) return [];
+    return orders.filter(
+      (ord) =>
+        ord.userId === user.uid ||
+        (Boolean(ord.customerEmail && user.email) &&
+          ord.customerEmail.toLowerCase() === user.email?.toLowerCase())
+    );
+  }, [orders, user]);
+
   return (
     <div className="bg-[#F7F0E6] min-h-[75vh] py-12 px-4 sm:px-8">
       <div className="max-w-[1280px] mx-auto space-y-10">
@@ -832,17 +842,39 @@ export const AccountPage: React.FC = () => {
             </form>
           </div>
 
-          {/* Right: Order History */}
+          {/* Right: Personal Order History */}
           <div className="lg:col-span-7 bg-[#FFFDFC] border border-[#B99A62]/35 p-6 sm:p-8 space-y-5">
-            <h2 className="font-serif-luxury text-2xl text-[#33221C] flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#B99A62]" />
-              My Orders ({orders.length})
-            </h2>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="font-serif-luxury text-2xl text-[#33221C] flex items-center gap-2">
+                <Package className="w-5 h-5 text-[#B99A62]" />
+                My Orders ({myPersonalOrders.length})
+              </h2>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="text-xs font-semibold text-[#5A2630] hover:underline"
+                >
+                  Manage All Customer Orders →
+                </Link>
+              )}
+            </div>
 
-            {orders.length === 0 ? (
+            {isAdmin && (
+              <div className="p-3 bg-[#EFE2D1]/70 border border-[#B99A62]/40 text-xs text-[#5A2630] flex items-center justify-between flex-wrap gap-2">
+                <span>Customer store orders are accessible in the boutique dashboard.</span>
+                <Link
+                  to="/admin"
+                  className="font-semibold underline ml-1"
+                >
+                  Open Orders Console
+                </Link>
+              </div>
+            )}
+
+            {myPersonalOrders.length === 0 ? (
               <div className="py-12 text-center space-y-3">
                 <p className="text-sm text-[#806B5E]">
-                  You have not placed any orders yet.
+                  You have not placed any personal orders yet.
                 </p>
                 <Link
                   to="/shop"
@@ -853,7 +885,7 @@ export const AccountPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {orders.map((ord) => (
+                {myPersonalOrders.map((ord) => (
                   <div
                     key={ord.id}
                     className="p-5 bg-[#F7F0E6] border border-[#B99A62]/30 space-y-3 text-xs"
@@ -903,46 +935,57 @@ export const AccountPage: React.FC = () => {
   );
 };
 
-export const AboutPage: React.FC = () => (
-  <div className="bg-[#F7F0E6] py-16 px-4 sm:px-8">
-    <div className="max-w-[1200px] mx-auto space-y-14">
-      <div className="text-center max-w-3xl mx-auto">
-        <div className="flex justify-center text-[#B99A62] mb-2">
-          <LotusOrnament className="w-10 h-6" />
-        </div>
-        <p className="text-xs tracking-[0.22em] text-[#5A2630] font-semibold">
-          OUR HERITAGE & PHILOSOPHY
-        </p>
-        <h1 className="font-serif-luxury text-4xl sm:text-6xl text-[#33221C] mt-2 text-balance">
-          Crafted With Tradition. Curated For Today.
-        </h1>
-      </div>
+export const AboutPage: React.FC = () => {
+  const { settings } = useStore();
+  const subtitle = settings.storySubtitle || 'OUR HERITAGE & PHILOSOPHY';
+  const title = settings.storyTitle || 'Crafted With Tradition. Curated For Today.';
+  const quote = settings.storyQuote || 'Celebrating the timeless poetry of Indian handlooms and sacred temple jewelry.';
+  const p1 = settings.storyParagraph1 || 'Founded with a devotion to authentic Indian textiles and traditional goldsmithing, Latha Sarees & Jewelry curates heirloom drapes and artisanal jewelry for women who cherish heritage with modern refinement.';
+  const p2 = settings.storyParagraph2 || 'Every Banarasi and Kanchipuram saree in our collection is selected for the purity of its silk, the richness of its zari weave, and the grace of its drape. Our jewelry collection pairs these textiles with handcrafted Kemp ruby jhumkas, Goddess Lakshmi Nakshi harams, and Nizam kadas.';
+  const img = settings.storyImageUrl || BRAND_IMAGES.heroBridal;
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-        <div className="lg:col-span-6">
-          <img
-            src={BRAND_IMAGES.heroBridal}
-            alt="Latha Sarees & Jewelry Heritage"
-            referrerPolicy="no-referrer"
-            className="w-full aspect-[4/3] object-cover border border-[#B99A62]/40 p-2 bg-[#FFFDFC]"
-          />
+  return (
+    <div className="bg-[#F7F0E6] py-16 px-4 sm:px-8">
+      <div className="max-w-[1200px] mx-auto space-y-14">
+        <div className="text-center max-w-3xl mx-auto">
+          <div className="flex justify-center text-[#B99A62] mb-2">
+            <LotusOrnament className="w-10 h-6" />
+          </div>
+          <p className="text-xs tracking-[0.22em] text-[#5A2630] font-semibold uppercase">
+            {subtitle}
+          </p>
+          <h1 className="font-serif-luxury text-4xl sm:text-6xl text-[#33221C] mt-2 text-balance">
+            {title}
+          </h1>
         </div>
-        <div className="lg:col-span-6 space-y-4 text-sm text-[#806B5E] leading-relaxed">
-          <p className="text-[#33221C] font-serif-luxury text-2xl">
-            Celebrating the timeless poetry of Indian handlooms and sacred temple jewelry.
-          </p>
-          <p>
-            Founded with a devotion to authentic Indian textiles and traditional goldsmithing,{' '}
-            <strong className="text-[#33221C]">Latha Sarees & Jewelry</strong> curates heirloom drapes and artisanal jewelry for women who cherish heritage with modern refinement.
-          </p>
-          <p>
-            Every Banarasi and Kanchipuram saree in our collection is selected for the purity of its silk, the richness of its zari weave, and the grace of its drape. Our jewelry collection pairs these textiles with handcrafted Kemp ruby jhumkas, Goddess Lakshmi Nakshi harams, and Nizam kadas.
-          </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-6">
+            <img
+              src={img}
+              alt="Latha Sarees & Jewelry Heritage"
+              referrerPolicy="no-referrer"
+              className="w-full aspect-[4/3] object-cover border border-[#B99A62]/40 p-2 bg-[#FFFDFC] shadow-sm"
+            />
+          </div>
+          <div className="lg:col-span-6 space-y-4 text-sm text-[#806B5E] leading-relaxed">
+            <p className="text-[#33221C] font-serif-luxury text-2xl">
+              {quote}
+            </p>
+            <p className="whitespace-pre-line leading-relaxed">
+              {p1}
+            </p>
+            {p2 && (
+              <p className="whitespace-pre-line leading-relaxed">
+                {p2}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const ContactPage: React.FC = () => {
   const { showToast } = useStore();

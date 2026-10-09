@@ -60,6 +60,12 @@ export default function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/faq" element={<FaqAndLegalPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<AdminDashboard initialTab="products" />} />
+              <Route path="/admin/add-product" element={<AdminDashboard initialTab="add-product" />} />
+              <Route path="/admin/hero" element={<AdminDashboard initialTab="hero" />} />
+              <Route path="/admin/orders" element={<AdminDashboard initialTab="orders" />} />
+              <Route path="/admin/story" element={<AdminDashboard initialTab="story" />} />
+              <Route path="/admin/settings" element={<AdminDashboard initialTab="settings" />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </main>
