@@ -61,33 +61,6 @@ const HERO_SLIDES = [
   },
 ];
 
-const CIRCULAR_CATEGORIES = [
-  {
-    title: 'SAREES',
-    subtitle: 'Timeless silk drapes',
-    image: BRAND_IMAGES.sareeBanarasiCrimson,
-    link: '/sarees',
-  },
-  {
-    title: 'JHUMKAS',
-    subtitle: 'Kemp & pearl bells',
-    image: BRAND_IMAGES.jewelryTempleJhumka,
-    link: '/jewelry?sub=Jhumkas',
-  },
-  {
-    title: 'NECKLACES',
-    subtitle: 'Sacred temple harams',
-    image: BRAND_IMAGES.jewelryLakshmiNecklace,
-    link: '/jewelry?sub=Necklaces',
-  },
-  {
-    title: 'OTHER JEWELRY',
-    subtitle: 'Kadas, bangles & sets',
-    image: BRAND_IMAGES.jewelryKundanBangles,
-    link: '/jewelry?sub=Bangles',
-  },
-];
-
 const INSTAGRAM_POSTS = [
   {
     image: BRAND_IMAGES.heroBridal,
@@ -343,43 +316,6 @@ export const Home: React.FC = () => {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* ==================================================
-          2. CIRCULAR CATEGORY MEDALLIONS (Reference Inspired)
-      ================================================== */}
-      <section className="py-14 sm:py-16 px-4 sm:px-8 max-w-[1360px] mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
-          {CIRCULAR_CATEGORIES.map((cat) => (
-            <Link
-              key={cat.title}
-              to={cat.link}
-              className="group flex flex-col items-center text-center"
-            >
-              {/* Double Gold Ring Circular Medallion */}
-              <div className="relative w-36 h-36 sm:w-48 sm:h-48 rounded-full p-1.5 border border-[#B99A62] bg-[#FFFDFC] shadow-xs transition-transform duration-300 group-hover:scale-103">
-                <div className="w-full h-full rounded-full overflow-hidden border border-[#B99A62]/50 bg-[#2C1814]">
-                  <img
-                    src={cat.image}
-                    alt={cat.title}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                </div>
-              </div>
-
-              <h2 className="mt-4 font-serif-luxury text-lg sm:text-xl font-semibold tracking-[0.16em] text-[#33221C] group-hover:text-[#5A2630] transition-colors">
-                {cat.title}
-              </h2>
-              <span className="mt-1 text-xs text-[#806B5E] group-hover:text-[#33221C] flex items-center gap-1 transition-colors">
-                Explore collection
-                <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
-                  →
-                </span>
-              </span>
-            </Link>
-          ))}
         </div>
       </section>
 
