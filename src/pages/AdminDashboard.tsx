@@ -1297,7 +1297,7 @@ export const AdminDashboard: React.FC<{
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveHeroSubmit} className="space-y-6 text-xs">
+                <form onSubmit={handleSaveHeroSubmit} noValidate className="space-y-6 text-xs">
                   {/* Media Format & Source Selection */}
                   <div className="p-4 bg-[#F7F0E6] border border-[#B99A62]/30 space-y-4">
                     <p className="font-semibold text-[#33221C] uppercase tracking-wider text-[11px]">
@@ -1422,11 +1422,10 @@ export const AdminDashboard: React.FC<{
                                 Enter Any Pinterest Pin Link (URL)
                               </label>
                               <input
-                                type="url"
-                                required
+                                type="text"
                                 value={heroMediaUrl}
                                 onChange={(e) => setHeroMediaUrl(e.target.value)}
-                                placeholder="https://in.pinterest.com/pin/31384528648409924/"
+                                placeholder="https://in.pinterest.com/pin/31384528648409924/ or Pin link"
                                 className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
                               />
                             </div>
@@ -1454,11 +1453,10 @@ export const AdminDashboard: React.FC<{
                                 Or Enter Custom Image URL Link (or Pinterest Pin)
                               </label>
                               <input
-                                type="url"
-                                required
+                                type="text"
                                 value={heroMediaUrl}
                                 onChange={(e) => setHeroMediaUrl(e.target.value)}
-                                placeholder="https://images.unsplash.com/... or Pinterest Pin URL"
+                                placeholder="Image URL, path (e.g. /assets/...), or Pinterest Pin"
                                 className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
                               />
                             </div>
@@ -1486,11 +1484,10 @@ export const AdminDashboard: React.FC<{
                                 Or Enter Custom Video Link (MP4, YouTube, or Pinterest Pin URL)
                               </label>
                               <input
-                                type="url"
-                                required
+                                type="text"
                                 value={heroMediaUrl}
                                 onChange={(e) => setHeroMediaUrl(e.target.value)}
-                                placeholder="https://.../video.mp4, YouTube, or Pinterest Pin URL"
+                                placeholder="Video URL, MP4 path (e.g. /assets/sareesvideo.mp4), YouTube, or Pinterest Pin"
                                 className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
                               />
                             </div>
@@ -1567,7 +1564,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroTitleLine1}
                           onChange={(e) => setHeroTitleLine1(e.target.value)}
                           placeholder="e.g. TIMELESS INDIAN"
@@ -1580,7 +1576,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroTitleLine2}
                           onChange={(e) => setHeroTitleLine2(e.target.value)}
                           placeholder="e.g. ELEGANCE,"
@@ -1595,7 +1590,6 @@ export const AdminDashboard: React.FC<{
                       </label>
                       <input
                         type="text"
-                        required
                         value={heroSubtitleGold}
                         onChange={(e) => setHeroSubtitleGold(e.target.value)}
                         placeholder="e.g. PRECIOUS & WOVEN FOR YOU."
@@ -1609,7 +1603,6 @@ export const AdminDashboard: React.FC<{
                       </label>
                       <input
                         type="text"
-                        required
                         value={heroKicker}
                         onChange={(e) => setHeroKicker(e.target.value)}
                         placeholder="SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES"
@@ -1623,7 +1616,6 @@ export const AdminDashboard: React.FC<{
                       </label>
                       <textarea
                         rows={3}
-                        required
                         value={heroDescription}
                         onChange={(e) => setHeroDescription(e.target.value)}
                         placeholder="Discover handwoven Banarasi and Kanchipuram silks..."
@@ -1644,7 +1636,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroPrimaryCtaText}
                           onChange={(e) => setHeroPrimaryCtaText(e.target.value)}
                           placeholder="DISCOVER THE COLLECTION"
@@ -1657,7 +1648,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroPrimaryCtaLink}
                           onChange={(e) => setHeroPrimaryCtaLink(e.target.value)}
                           placeholder="/shop"
@@ -1673,7 +1663,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroSecondaryCtaText}
                           onChange={(e) => setHeroSecondaryCtaText(e.target.value)}
                           placeholder="EXPLORE JEWELRY"
@@ -1686,7 +1675,6 @@ export const AdminDashboard: React.FC<{
                         </label>
                         <input
                           type="text"
-                          required
                           value={heroSecondaryCtaLink}
                           onChange={(e) => setHeroSecondaryCtaLink(e.target.value)}
                           placeholder="/jewelry"
