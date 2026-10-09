@@ -22,7 +22,7 @@ import {
   Play,
   Image as ImageIcon,
 } from 'lucide-react';
-import { useStore, OrderRecord } from '../context/StoreContext';
+import { useStore, OrderRecord, DEFAULT_HERO_SLIDES, HeroSlideConfig } from '../context/StoreContext';
 import { BRAND_IMAGES, Product } from '../data/catalog';
 import { parseHeroMedia, extractPinterestPinId, isPinterestUrl } from '../utils/mediaEmbed';
 
@@ -158,7 +158,16 @@ export const AdminDashboard: React.FC<{
     settings.storyImageUrl || BRAND_IMAGES.heroBridal
   );
 
-  // Hero Section State
+  // Hero Section State & Multi-Slide Selection
+  const [selectedHeroSlideIdx, setSelectedHeroSlideIdx] = useState(0);
+
+  const getSlideConfig = (slideIdx: number): HeroSlideConfig => {
+    const list = settings.heroSlides && settings.heroSlides.length > 0
+      ? settings.heroSlides
+      : DEFAULT_HERO_SLIDES;
+    return list[slideIdx] || DEFAULT_HERO_SLIDES[slideIdx] || DEFAULT_HERO_SLIDES[0];
+  };
+
   const [heroMediaType, setHeroMediaType] = useState<'image' | 'video' | 'pinterest'>(
     settings.heroMediaType || 'image'
   );
@@ -211,20 +220,21 @@ export const AdminDashboard: React.FC<{
     if (settings.storyParagraph2) setStoryParagraph2(settings.storyParagraph2);
     if (settings.storyImageUrl) setStoryImageUrl(settings.storyImageUrl);
 
-    if (settings.heroMediaType) setHeroMediaType(settings.heroMediaType);
-    if (settings.heroMediaSource) setHeroMediaSource(settings.heroMediaSource);
-    if (settings.heroMediaUrl) setHeroMediaUrl(settings.heroMediaUrl);
-    if (settings.heroMediaFileName) setHeroMediaFileName(settings.heroMediaFileName);
-    if (settings.heroTitleLine1) setHeroTitleLine1(settings.heroTitleLine1);
-    if (settings.heroTitleLine2) setHeroTitleLine2(settings.heroTitleLine2);
-    if (settings.heroSubtitleGold) setHeroSubtitleGold(settings.heroSubtitleGold);
-    if (settings.heroKicker) setHeroKicker(settings.heroKicker);
-    if (settings.heroDescription) setHeroDescription(settings.heroDescription);
-    if (settings.heroPrimaryCtaText) setHeroPrimaryCtaText(settings.heroPrimaryCtaText);
-    if (settings.heroPrimaryCtaLink) setHeroPrimaryCtaLink(settings.heroPrimaryCtaLink);
-    if (settings.heroSecondaryCtaText) setHeroSecondaryCtaText(settings.heroSecondaryCtaText);
-    if (settings.heroSecondaryCtaLink) setHeroSecondaryCtaLink(settings.heroSecondaryCtaLink);
-  }, [settings]);
+    const targetSlide = getSlideConfig(selectedHeroSlideIdx);
+    setHeroMediaType(targetSlide.mediaType || 'image');
+    setHeroMediaSource(targetSlide.mediaSource || 'url');
+    setHeroMediaUrl(targetSlide.mediaUrl || '');
+    setHeroMediaFileName(targetSlide.mediaFileName || '');
+    setHeroTitleLine1(targetSlide.titleLine1 || '');
+    setHeroTitleLine2(targetSlide.titleLine2 || '');
+    setHeroSubtitleGold(targetSlide.subtitleGold || '');
+    setHeroKicker(targetSlide.kicker || '');
+    setHeroDescription(targetSlide.description || '');
+    setHeroPrimaryCtaText(targetSlide.primaryCtaText || '');
+    setHeroPrimaryCtaLink(targetSlide.primaryCtaLink || '');
+    setHeroSecondaryCtaText(targetSlide.secondaryCtaText || '');
+    setHeroSecondaryCtaLink(targetSlide.secondaryCtaLink || '');
+  }, [settings, selectedHeroSlideIdx]);
 
   if (!user) {
     return (
@@ -426,21 +436,48 @@ export const AdminDashboard: React.FC<{
 
   const handleSaveHeroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const currentSlides = [
+      ...(settings.heroSlides && settings.heroSlides.length > 0
+        ? settings.heroSlides
+        : DEFAULT_HERO_SLIDES),
+    ];
+    currentSlides[selectedHeroSlideIdx] = {
+      id: selectedHeroSlideIdx,
+      titleLine1: heroTitleLine1,
+      titleLine2: heroTitleLine2,
+      subtitleGold: heroSubtitleGold,
+      kicker: heroKicker,
+      description: heroDescription,
+      mediaType: heroMediaType,
+      mediaSource: heroMediaSource,
+      mediaUrl: heroMediaUrl,
+      mediaFileName: heroMediaFileName,
+      primaryCtaText: heroPrimaryCtaText,
+      primaryCtaLink: heroPrimaryCtaLink,
+      secondaryCtaText: heroSecondaryCtaText,
+      secondaryCtaLink: heroSecondaryCtaLink,
+    };
+
     await adminUpdateSettings({
       ...settings,
-      heroMediaType,
-      heroMediaSource,
-      heroMediaUrl,
-      heroMediaFileName,
-      heroTitleLine1,
-      heroTitleLine2,
-      heroSubtitleGold,
-      heroKicker,
-      heroDescription,
-      heroPrimaryCtaText,
-      heroPrimaryCtaLink,
-      heroSecondaryCtaText,
-      heroSecondaryCtaLink,
+      heroSlides: currentSlides,
+      ...(selectedHeroSlideIdx === 0
+        ? {
+            heroMediaType,
+            heroMediaSource,
+            heroMediaUrl,
+            heroMediaFileName,
+            heroTitleLine1,
+            heroTitleLine2,
+            heroSubtitleGold,
+            heroKicker,
+            heroDescription,
+            heroPrimaryCtaText,
+            heroPrimaryCtaLink,
+            heroSecondaryCtaText,
+            heroSecondaryCtaLink,
+          }
+        : {}),
     });
   };
 
@@ -451,7 +488,7 @@ export const AdminDashboard: React.FC<{
     if (!file) return;
     try {
       const isVid = file.type.startsWith('video');
-      const url = await uploadHeroMediaFile(file);
+      const url = await uploadHeroMediaFile(file, selectedHeroSlideIdx);
       setHeroMediaUrl(url);
       setHeroMediaType(isVid ? 'video' : 'image');
       setHeroMediaSource('system');
@@ -462,23 +499,22 @@ export const AdminDashboard: React.FC<{
   };
 
   const handleResetHeroMedia = async () => {
-    if (window.confirm('Reset hero section media & typography back to signature boutique defaults?')) {
-      await resetHeroMediaToDefault();
-      setHeroMediaType('image');
-      setHeroMediaSource('url');
-      setHeroMediaUrl(BRAND_IMAGES.heroBridal);
+    if (window.confirm(`Reset Hero Slide ${selectedHeroSlideIdx + 1} back to signature boutique defaults?`)) {
+      await resetHeroMediaToDefault(selectedHeroSlideIdx);
+      const defaultSlide = DEFAULT_HERO_SLIDES[selectedHeroSlideIdx] || DEFAULT_HERO_SLIDES[0];
+      setHeroMediaType(defaultSlide.mediaType);
+      setHeroMediaSource(defaultSlide.mediaSource || 'url');
+      setHeroMediaUrl(defaultSlide.mediaUrl);
       setHeroMediaFileName('');
-      setHeroTitleLine1('TIMELESS INDIAN');
-      setHeroTitleLine2('ELEGANCE,');
-      setHeroSubtitleGold('PRECIOUS & WOVEN FOR YOU.');
-      setHeroKicker('SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE');
-      setHeroDescription(
-        'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.'
-      );
-      setHeroPrimaryCtaText('DISCOVER THE COLLECTION');
-      setHeroPrimaryCtaLink('/shop');
-      setHeroSecondaryCtaText('EXPLORE JEWELRY');
-      setHeroSecondaryCtaLink('/jewelry');
+      setHeroTitleLine1(defaultSlide.titleLine1);
+      setHeroTitleLine2(defaultSlide.titleLine2);
+      setHeroSubtitleGold(defaultSlide.subtitleGold);
+      setHeroKicker(defaultSlide.kicker);
+      setHeroDescription(defaultSlide.description);
+      setHeroPrimaryCtaText(defaultSlide.primaryCtaText);
+      setHeroPrimaryCtaLink(defaultSlide.primaryCtaLink);
+      setHeroSecondaryCtaText(defaultSlide.secondaryCtaText);
+      setHeroSecondaryCtaLink(defaultSlide.secondaryCtaLink);
     }
   };
 
@@ -1209,6 +1245,58 @@ export const AdminDashboard: React.FC<{
                   </button>
                 </div>
 
+                {/* Multi-Slide Switcher Tabs */}
+                <div className="p-4 bg-[#F7F0E6] border border-[#B99A62]/40 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-[#33221C] uppercase tracking-wider text-[11px]">
+                        Select Hero Slide to Customize:
+                      </p>
+                      <p className="text-[11px] text-[#806B5E]">
+                        Switch between slides to customize media, texts, and buttons for each slide.
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-[#4A1C24] text-[#F7F0E6] rounded-xs uppercase tracking-wider self-start sm:self-auto">
+                      Editing Slide {selectedHeroSlideIdx + 1} of 3
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                    {[
+                      { idx: 0, title: 'Slide 1: Main Feature', theme: 'General / Timeless Elegance' },
+                      { idx: 1, title: 'Slide 2: Sarees Edit', theme: 'Heirloom Silk Drapes' },
+                      { idx: 2, title: 'Slide 3: Jewelry Edit', theme: 'Sacred Temple Jewelry' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.idx}
+                        type="button"
+                        onClick={() => setSelectedHeroSlideIdx(tab.idx)}
+                        className={`p-3 text-left border transition-all cursor-pointer ${
+                          selectedHeroSlideIdx === tab.idx
+                            ? 'bg-[#4A1C24] text-[#F7F0E6] border-[#4A1C24] shadow-sm ring-1 ring-[#B99A62]'
+                            : 'bg-[#FFFDFC] text-[#33221C] border-[#B99A62]/35 hover:bg-[#EFE2D1]'
+                        }`}
+                      >
+                        <div className="font-semibold text-xs flex items-center justify-between">
+                          <span>{tab.title}</span>
+                          {selectedHeroSlideIdx === tab.idx && (
+                            <span className="text-[9px] bg-[#B99A62] text-[#1E110E] px-1.5 py-0.2 rounded-xs font-bold">
+                              ACTIVE
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className={`text-[10px] mt-1 truncate ${
+                            selectedHeroSlideIdx === tab.idx ? 'text-[#F7F0E6]/80' : 'text-[#806B5E]'
+                          }`}
+                        >
+                          {tab.theme}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <form onSubmit={handleSaveHeroSubmit} className="space-y-6 text-xs">
                   {/* Media Format & Source Selection */}
                   <div className="p-4 bg-[#F7F0E6] border border-[#B99A62]/30 space-y-4">
@@ -1614,7 +1702,7 @@ export const AdminDashboard: React.FC<{
                       type="submit"
                       className="w-full py-4 bg-[#4A1C24] text-[#F7F0E6] text-xs font-semibold tracking-[0.16em] hover:bg-[#5A2630] transition-colors shadow-md"
                     >
-                      SAVE HERO SECTION SETTINGS
+                      SAVE SLIDE {selectedHeroSlideIdx + 1} SETTINGS
                     </button>
                   </div>
                 </form>
@@ -1626,7 +1714,7 @@ export const AdminDashboard: React.FC<{
                   <div className="flex items-center justify-between border-b border-[#B99A62]/20 pb-3">
                     <h3 className="font-serif-luxury text-base font-medium text-[#33221C] flex items-center gap-2">
                       <Eye className="w-4 h-4 text-[#B99A62]" />
-                      Storefront Hero Live Preview
+                      Slide {selectedHeroSlideIdx + 1} Live Preview
                     </h3>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
                       {extractPinterestPinId(heroMediaUrl)

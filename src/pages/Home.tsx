@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Truck,
@@ -7,8 +7,10 @@ import {
   ArrowRight,
   Star,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { useStore } from '../context/StoreContext';
+import { useStore, DEFAULT_HERO_SLIDES } from '../context/StoreContext';
 import { BRAND_IMAGES, CURATED_COLLECTIONS, TESTIMONIALS } from '../data/catalog';
 import { ProductCard } from '../components/ProductCard';
 import { LotusOrnament } from '../components/Navbar';
@@ -117,33 +119,46 @@ export const Home: React.FC = () => {
   const { products, settings } = useStore();
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Dynamic slides where slide 0 adopts the customized boutique hero settings
-  const slides = [
-    {
-      id: 0,
-      titleLine1: settings.heroTitleLine1 || HERO_SLIDES[0].titleLine1,
-      titleLine2: settings.heroTitleLine2 || HERO_SLIDES[0].titleLine2,
-      subtitleGold: settings.heroSubtitleGold || HERO_SLIDES[0].subtitleGold,
-      kicker: settings.heroKicker || HERO_SLIDES[0].kicker,
-      description: settings.heroDescription || HERO_SLIDES[0].description,
-      mediaType: settings.heroMediaType || 'video',
-      mediaUrl: settings.heroMediaUrl || BRAND_IMAGES.sareesVideo,
-      primaryCtaText: settings.heroPrimaryCtaText || HERO_SLIDES[0].primaryCtaText,
-      primaryCtaLink: settings.heroPrimaryCtaLink || HERO_SLIDES[0].primaryCtaLink,
-      secondaryCtaText: settings.heroSecondaryCtaText || HERO_SLIDES[0].secondaryCtaText,
-      secondaryCtaLink: settings.heroSecondaryCtaLink || HERO_SLIDES[0].secondaryCtaLink,
-    },
-    {
-      ...HERO_SLIDES[1],
-      mediaType: 'video' as const,
-      mediaUrl: BRAND_IMAGES.sareesVideo,
-    },
-    {
-      ...HERO_SLIDES[2],
-      mediaType: 'video' as const,
-      mediaUrl: BRAND_IMAGES.jewelryVideo,
-    },
-  ];
+  // Dynamic slides supporting customization for ALL slides from settings.heroSlides
+  const slides = useMemo(() => {
+    if (settings.heroSlides && settings.heroSlides.length > 0) {
+      return settings.heroSlides;
+    }
+    return [
+      {
+        id: 0,
+        titleLine1: settings.heroTitleLine1 || HERO_SLIDES[0].titleLine1,
+        titleLine2: settings.heroTitleLine2 || HERO_SLIDES[0].titleLine2,
+        subtitleGold: settings.heroSubtitleGold || HERO_SLIDES[0].subtitleGold,
+        kicker: settings.heroKicker || HERO_SLIDES[0].kicker,
+        description: settings.heroDescription || HERO_SLIDES[0].description,
+        mediaType: settings.heroMediaType || 'video',
+        mediaUrl: settings.heroMediaUrl || BRAND_IMAGES.sareesVideo,
+        primaryCtaText: settings.heroPrimaryCtaText || HERO_SLIDES[0].primaryCtaText,
+        primaryCtaLink: settings.heroPrimaryCtaLink || HERO_SLIDES[0].primaryCtaLink,
+        secondaryCtaText: settings.heroSecondaryCtaText || HERO_SLIDES[0].secondaryCtaText,
+        secondaryCtaLink: settings.heroSecondaryCtaLink || HERO_SLIDES[0].secondaryCtaLink,
+      },
+      {
+        ...HERO_SLIDES[1],
+        mediaType: 'video' as const,
+        mediaUrl: BRAND_IMAGES.sareesVideo,
+      },
+      {
+        ...HERO_SLIDES[2],
+        mediaType: 'video' as const,
+        mediaUrl: BRAND_IMAGES.jewelryVideo,
+      },
+    ];
+  }, [settings]);
+
+  const prevSlide = () => {
+    setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+  };
+
+  const nextSlide = () => {
+    setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  };
 
   const currentHero = slides[activeSlide] || slides[0];
   const curatedProducts = products.slice(0, 5);
@@ -276,19 +291,57 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          {/* Slide Selector Dots at Bottom Center of Hero */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
-            {slides.map((slide, idx) => (
-              <button
-                key={slide.id}
-                type="button"
-                onClick={() => setActiveSlide(idx)}
-                aria-label={`View hero slide ${idx + 1}`}
-                className={`w-2.5 h-2.5 rounded-full border border-[#4A1C24] transition-colors ${
-                  activeSlide === idx ? 'bg-[#4A1C24]' : 'bg-[#F7F0E6]/80 hover:bg-[#B99A62]'
-                }`}
-              />
-            ))}
+          {/* Left (<) Navigation Arrow Button */}
+          <button
+            type="button"
+            onClick={prevSlide}
+            aria-label="Previous slide"
+            className="absolute left-3 sm:left-6 lg:left-20 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FFFDFC]/90 hover:bg-[#4A1C24] text-[#4A1C24] hover:text-[#F7F0E6] border border-[#B99A62]/60 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 -ml-0.5 transition-transform group-hover:-translate-x-0.5" />
+          </button>
+
+          {/* Right (>) Navigation Arrow Button */}
+          <button
+            type="button"
+            onClick={nextSlide}
+            aria-label="Next slide"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FFFDFC]/90 hover:bg-[#4A1C24] text-[#4A1C24] hover:text-[#F7F0E6] border border-[#B99A62]/60 shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          {/* Slide Selector Controls at Bottom Center with < [Dots] > */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-[#2C1814]/70 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-[#B99A62]/40 shadow-md">
+            <button
+              type="button"
+              onClick={prevSlide}
+              aria-label="Previous slide"
+              className="text-[#F7F0E6]/80 hover:text-[#B99A62] transition-colors p-0.5 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              {slides.map((slide, idx) => (
+                <button
+                  key={slide.id ?? idx}
+                  type="button"
+                  onClick={() => setActiveSlide(idx)}
+                  aria-label={`View hero slide ${idx + 1}`}
+                  className={`w-2.5 h-2.5 rounded-full border border-[#B99A62] transition-all cursor-pointer ${
+                    activeSlide === idx ? 'bg-[#B99A62] scale-125' : 'bg-[#F7F0E6]/40 hover:bg-[#B99A62]/70'
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={nextSlide}
+              aria-label="Next slide"
+              className="text-[#F7F0E6]/80 hover:text-[#B99A62] transition-colors p-0.5 cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </section>

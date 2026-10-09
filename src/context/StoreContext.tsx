@@ -25,7 +25,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from '../firebase';
-import { INITIAL_PRODUCTS, Product } from '../data/catalog';
+import { INITIAL_PRODUCTS, Product, BRAND_IMAGES } from '../data/catalog';
 import { saveLocalMedia, getLocalMedia, deleteLocalMedia } from '../utils/mediaStorage';
 
 export interface CartItem {
@@ -87,7 +87,7 @@ export interface StoreSettings {
   storyParagraph2?: string;
   storyImageUrl?: string;
 
-  // Hero Section Customization
+  // Single hero slide legacy fields (Slide 0 compatibility)
   heroMediaType?: 'image' | 'video' | 'pinterest';
   heroMediaUrl?: string;
   heroMediaSource?: 'url' | 'system';
@@ -101,6 +101,26 @@ export interface StoreSettings {
   heroPrimaryCtaLink?: string;
   heroSecondaryCtaText?: string;
   heroSecondaryCtaLink?: string;
+
+  // Multi-slide Hero Configuration
+  heroSlides?: HeroSlideConfig[];
+}
+
+export interface HeroSlideConfig {
+  id: number;
+  titleLine1: string;
+  titleLine2: string;
+  subtitleGold: string;
+  kicker: string;
+  description: string;
+  mediaType: 'image' | 'video' | 'pinterest';
+  mediaSource?: 'url' | 'system';
+  mediaUrl: string;
+  mediaFileName?: string;
+  primaryCtaText: string;
+  primaryCtaLink: string;
+  secondaryCtaText: string;
+  secondaryCtaLink: string;
 }
 
 interface StoreContextType {
@@ -150,8 +170,8 @@ interface StoreContextType {
   ) => Promise<void>;
   adminUpdateSettings: (newSettings: StoreSettings) => Promise<void>;
   adminSeedCatalog: () => Promise<void>;
-  uploadHeroMediaFile: (file: File) => Promise<string>;
-  resetHeroMediaToDefault: () => Promise<void>;
+  uploadHeroMediaFile: (file: File, slideIdx?: number) => Promise<string>;
+  resetHeroMediaToDefault: (slideIdx?: number) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -173,6 +193,87 @@ function formatTimestamp(val: unknown): string {
     year: 'numeric',
   });
 }
+
+export const DEFAULT_HERO_SLIDES: HeroSlideConfig[] = [
+  {
+    id: 0,
+    titleLine1: 'TIMELESS INDIAN',
+    titleLine2: 'ELEGANCE,',
+    subtitleGold: 'PRECIOUS & WOVEN FOR YOU.',
+    kicker: 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE',
+    description:
+      'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.',
+    mediaType: 'image',
+    mediaSource: 'url',
+    mediaUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1600',
+    mediaFileName: '',
+    primaryCtaText: 'DISCOVER THE COLLECTION',
+    primaryCtaLink: '/shop',
+    secondaryCtaText: 'EXPLORE JEWELRY',
+    secondaryCtaLink: '/jewelry',
+  },
+  {
+    id: 1,
+    titleLine1: 'HEIRLOOM SILK',
+    titleLine2: 'DRAPES,',
+    subtitleGold: 'HANDWOVEN IN KANCHIPURAM & KASHI.',
+    kicker: 'PURE MULBERRY SILK · KORVAI ZARI · BRIDAL TROUSSEAU',
+    description:
+      'Each saree in the Latha archive is selected directly from master weaver looms for its lustrous drape and architectural gold zari.',
+    mediaType: 'video',
+    mediaSource: 'url',
+    mediaUrl: BRAND_IMAGES.sareesVideo,
+    mediaFileName: '',
+    primaryCtaText: 'SHOP SAREES',
+    primaryCtaLink: '/sarees',
+    secondaryCtaText: 'BRIDAL EDIT',
+    secondaryCtaLink: '/collections/wedding-collection',
+  },
+  {
+    id: 2,
+    titleLine1: 'SACRED TEMPLE',
+    titleLine2: 'JEWELRY,',
+    subtitleGold: 'SCULPTED IN ANTIQUE GOLD & PEARLS.',
+    kicker: 'LAKSHMI HARAMS · KEMP JHUMKAS · NIZAM KADAS',
+    description:
+      'Intricate South Indian Nakshi artistry hand-set with deep Kemp rubies and natural pearl clusters to complete your ceremonial look.',
+    mediaType: 'video',
+    mediaSource: 'url',
+    mediaUrl: BRAND_IMAGES.jewelryVideo,
+    mediaFileName: '',
+    primaryCtaText: 'EXPLORE JEWELRY',
+    primaryCtaLink: '/jewelry',
+    secondaryCtaText: 'SHOP JHUMKAS',
+    secondaryCtaLink: '/jewelry?sub=Jhumkas',
+  },
+];
+
+export const DEFAULT_SETTINGS: StoreSettings = {
+  announcementText: 'Complimentary Shipping across India on Orders Above ₹2,999 · Boutique Concierge: +91 7036623624',
+  freeShippingThreshold: 2999,
+  codEnabled: true,
+  storySubtitle: 'OUR HERITAGE & PHILOSOPHY',
+  storyTitle: 'Crafted With Tradition. Curated For Today.',
+  storyQuote: 'Celebrating the timeless poetry of Indian handlooms and sacred temple jewelry.',
+  storyParagraph1: 'Founded with a devotion to authentic Indian textiles and traditional goldsmithing, Latha Sarees & Jewelry curates heirloom drapes and artisanal jewelry for women who cherish heritage with modern refinement.',
+  storyParagraph2: 'Every Banarasi and Kanchipuram saree in our collection is selected for the purity of its silk, the richness of its zari weave, and the grace of its drape. Our jewelry collection pairs these textiles with handcrafted Kemp ruby jhumkas, Goddess Lakshmi Nakshi harams, and Nizam kadas.',
+  storyImageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1200',
+  heroMediaType: 'image',
+  heroMediaUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1600',
+  heroMediaSource: 'url',
+  heroMediaFileName: '',
+  heroTitleLine1: 'TIMELESS INDIAN',
+  heroTitleLine2: 'ELEGANCE,',
+  heroSubtitleGold: 'PRECIOUS & WOVEN FOR YOU.',
+  heroKicker: 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE',
+  heroDescription:
+    'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.',
+  heroPrimaryCtaText: 'DISCOVER THE COLLECTION',
+  heroPrimaryCtaLink: '/shop',
+  secondaryCtaText: 'EXPLORE JEWELRY',
+  secondaryCtaLink: '/jewelry',
+  heroSlides: DEFAULT_HERO_SLIDES,
+};
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deletedIds, setDeletedIds] = useState<string[]>(() => {
@@ -220,36 +321,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [profile, setProfile] = useState<UserPrivateProfile | null>(null);
-  const DEFAULT_SETTINGS: StoreSettings = {
-    announcementText: 'Complimentary Shipping across India on Orders Above ₹2,999 · Boutique Concierge: +91 7036623624',
-    freeShippingThreshold: 2999,
-    codEnabled: true,
-    storySubtitle: 'OUR HERITAGE & PHILOSOPHY',
-    storyTitle: 'Crafted With Tradition. Curated For Today.',
-    storyQuote: 'Celebrating the timeless poetry of Indian handlooms and sacred temple jewelry.',
-    storyParagraph1: 'Founded with a devotion to authentic Indian textiles and traditional goldsmithing, Latha Sarees & Jewelry curates heirloom drapes and artisanal jewelry for women who cherish heritage with modern refinement.',
-    storyParagraph2: 'Every Banarasi and Kanchipuram saree in our collection is selected for the purity of its silk, the richness of its zari weave, and the grace of its drape. Our jewelry collection pairs these textiles with handcrafted Kemp ruby jhumkas, Goddess Lakshmi Nakshi harams, and Nizam kadas.',
-    storyImageUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1200',
-    heroMediaType: 'image',
-    heroMediaUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&q=80&w=1600',
-    heroMediaSource: 'url',
-    heroMediaFileName: '',
-    heroTitleLine1: 'TIMELESS INDIAN',
-    heroTitleLine2: 'ELEGANCE,',
-    heroSubtitleGold: 'PRECIOUS & WOVEN FOR YOU.',
-    heroKicker: 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE',
-    heroDescription:
-      'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.',
-    heroPrimaryCtaText: 'DISCOVER THE COLLECTION',
-    heroPrimaryCtaLink: '/shop',
-    heroSecondaryCtaText: 'EXPLORE JEWELRY',
-    heroSecondaryCtaLink: '/jewelry',
-  };
-
   const [settings, setSettings] = useState<StoreSettings>(() => {
     try {
       const saved = localStorage.getItem('latha_store_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const mergedSlides = Array.isArray(parsed.heroSlides) && parsed.heroSlides.length > 0
+          ? parsed.heroSlides
+          : DEFAULT_HERO_SLIDES.map((s, idx) => {
+              if (idx === 0 && (parsed.heroTitleLine1 || parsed.heroMediaUrl)) {
+                return {
+                  ...s,
+                  titleLine1: parsed.heroTitleLine1 || s.titleLine1,
+                  titleLine2: parsed.heroTitleLine2 || s.titleLine2,
+                  subtitleGold: parsed.heroSubtitleGold || s.subtitleGold,
+                  kicker: parsed.heroKicker || s.kicker,
+                  description: parsed.heroDescription || s.description,
+                  mediaType: parsed.heroMediaType || s.mediaType,
+                  mediaSource: parsed.heroMediaSource || s.mediaSource,
+                  mediaUrl: parsed.heroMediaUrl || s.mediaUrl,
+                  mediaFileName: parsed.heroMediaFileName || s.mediaFileName,
+                  primaryCtaText: parsed.heroPrimaryCtaText || s.primaryCtaText,
+                  primaryCtaLink: parsed.heroPrimaryCtaLink || s.primaryCtaLink,
+                  secondaryCtaText: parsed.heroSecondaryCtaText || s.secondaryCtaText,
+                  secondaryCtaLink: parsed.heroSecondaryCtaLink || s.secondaryCtaLink,
+                };
+              }
+              return s;
+            });
+        return { ...DEFAULT_SETTINGS, ...parsed, heroSlides: mergedSlides };
+      }
+      return DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -378,6 +480,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             heroPrimaryCtaLink: data.heroPrimaryCtaLink || prev.heroPrimaryCtaLink,
             heroSecondaryCtaText: data.heroSecondaryCtaText || prev.heroSecondaryCtaText,
             heroSecondaryCtaLink: data.heroSecondaryCtaLink || prev.heroSecondaryCtaLink,
+            heroSlides: Array.isArray(data.heroSlides) && data.heroSlides.length > 0 ? data.heroSlides : prev.heroSlides,
           }));
         }
       })
@@ -906,6 +1009,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         heroPrimaryCtaLink: (newSettings.heroPrimaryCtaLink || '').trim().slice(0, 100),
         heroSecondaryCtaText: (newSettings.heroSecondaryCtaText || '').trim().slice(0, 50),
         heroSecondaryCtaLink: (newSettings.heroSecondaryCtaLink || '').trim().slice(0, 100),
+        heroSlides: (newSettings.heroSlides || DEFAULT_HERO_SLIDES).map((s) => ({
+          id: Number(s.id),
+          titleLine1: (s.titleLine1 || '').trim().slice(0, 100),
+          titleLine2: (s.titleLine2 || '').trim().slice(0, 100),
+          subtitleGold: (s.subtitleGold || '').trim().slice(0, 150),
+          kicker: (s.kicker || '').trim().slice(0, 200),
+          description: (s.description || '').trim().slice(0, 800),
+          mediaType: s.mediaType || 'image',
+          mediaSource: s.mediaSource || 'url',
+          mediaUrl: (s.mediaUrl || '').trim().slice(0, 2000),
+          mediaFileName: (s.mediaFileName || '').trim().slice(0, 200),
+          primaryCtaText: (s.primaryCtaText || '').trim().slice(0, 50),
+          primaryCtaLink: (s.primaryCtaLink || '').trim().slice(0, 100),
+          secondaryCtaText: (s.secondaryCtaText || '').trim().slice(0, 50),
+          secondaryCtaLink: (s.secondaryCtaLink || '').trim().slice(0, 100),
+        })),
         updatedAt: serverTimestamp(),
       });
       showToast('Boutique hero & settings updated');
@@ -915,35 +1034,69 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const uploadHeroMediaFile = async (file: File): Promise<string> => {
+  const uploadHeroMediaFile = async (file: File, slideIdx: number = 0): Promise<string> => {
     if (!isAdmin) throw new Error('Admin authorization required');
-    await saveLocalMedia('hero_media_file', file);
+    const storageKey = `hero_media_file_${slideIdx}`;
+    await saveLocalMedia(storageKey, file);
+    if (slideIdx === 0) {
+      await saveLocalMedia('hero_media_file', file);
+    }
     const objectUrl = URL.createObjectURL(file);
     const isVideo = file.type.startsWith('video');
+    
+    const currentSlides = [...(settings.heroSlides || DEFAULT_HERO_SLIDES)];
+    if (currentSlides[slideIdx]) {
+      currentSlides[slideIdx] = {
+        ...currentSlides[slideIdx],
+        mediaType: isVideo ? 'video' : 'image',
+        mediaUrl: objectUrl,
+        mediaSource: 'system',
+        mediaFileName: file.name,
+      };
+    }
+    
     const updated: StoreSettings = {
       ...settings,
-      heroMediaType: isVideo ? 'video' : 'image',
-      heroMediaUrl: objectUrl,
-      heroMediaSource: 'system',
-      heroMediaFileName: file.name,
+      heroSlides: currentSlides,
+      ...(slideIdx === 0
+        ? {
+            heroMediaType: isVideo ? 'video' : 'image',
+            heroMediaUrl: objectUrl,
+            heroMediaSource: 'system' as const,
+            heroMediaFileName: file.name,
+          }
+        : {}),
     };
     await adminUpdateSettings(updated);
-    showToast(`Hero ${isVideo ? 'video' : 'image'} file updated from system`);
+    showToast(`Slide ${slideIdx + 1} media file updated from system`);
     return objectUrl;
   };
 
-  const resetHeroMediaToDefault = async (): Promise<void> => {
+  const resetHeroMediaToDefault = async (slideIdx: number = 0): Promise<void> => {
     if (!isAdmin) return;
-    await deleteLocalMedia('hero_media_file');
+    const storageKey = `hero_media_file_${slideIdx}`;
+    await deleteLocalMedia(storageKey);
+    if (slideIdx === 0) {
+      await deleteLocalMedia('hero_media_file');
+    }
+    const currentSlides = [...(settings.heroSlides || DEFAULT_HERO_SLIDES)];
+    const defaultSlide = DEFAULT_HERO_SLIDES[slideIdx] || DEFAULT_HERO_SLIDES[0];
+    currentSlides[slideIdx] = { ...defaultSlide };
+    
     const updated: StoreSettings = {
       ...settings,
-      heroMediaType: DEFAULT_SETTINGS.heroMediaType,
-      heroMediaUrl: DEFAULT_SETTINGS.heroMediaUrl,
-      heroMediaSource: 'url',
-      heroMediaFileName: '',
+      heroSlides: currentSlides,
+      ...(slideIdx === 0
+        ? {
+            heroMediaType: defaultSlide.mediaType,
+            heroMediaUrl: defaultSlide.mediaUrl,
+            heroMediaSource: 'url' as const,
+            heroMediaFileName: '',
+          }
+        : {}),
     };
     await adminUpdateSettings(updated);
-    showToast('Hero media reset to signature default');
+    showToast(`Slide ${slideIdx + 1} reset to default`);
   };
 
   const adminSeedCatalog = async () => {
