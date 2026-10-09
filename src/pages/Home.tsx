@@ -12,6 +12,7 @@ import { useStore } from '../context/StoreContext';
 import { BRAND_IMAGES, CURATED_COLLECTIONS, TESTIMONIALS } from '../data/catalog';
 import { ProductCard } from '../components/ProductCard';
 import { LotusOrnament } from '../components/Navbar';
+import { parseHeroMedia } from '../utils/mediaEmbed';
 
 const HERO_SLIDES = [
   {
@@ -178,26 +179,59 @@ export const Home: React.FC = () => {
           <div className="relative flex-1 grid grid-cols-1 lg:grid-cols-12 items-center">
             {/* Background Media on Desktop Right / Full Bleed */}
             <div className="lg:col-span-12 lg:absolute lg:inset-0 overflow-hidden bg-[#2C1814]">
-              {currentHero.mediaType === 'video' ? (
-                <video
-                  key={currentHero.mediaUrl}
-                  src={currentHero.mediaUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
-                />
-              ) : (
-                <img
-                  src={currentHero.mediaUrl}
-                  alt={currentHero.titleLine1}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
-                />
-              )}
+              {(() => {
+                const mediaInfo = parseHeroMedia(currentHero.mediaUrl, currentHero.mediaType as any);
+
+                if (mediaInfo.type === 'pinterest' && mediaInfo.pinId) {
+                  return (
+                    <div className="w-full h-[400px] sm:h-[480px] lg:h-full flex items-center justify-center lg:justify-end lg:pr-14 py-4 z-0">
+                      <iframe
+                        src={`https://assets.pinterest.com/ext/embed.html?id=${mediaInfo.pinId}`}
+                        title="Pinterest Showcase"
+                        className="w-[280px] sm:w-[320px] lg:w-[360px] h-[390px] sm:h-[460px] lg:h-[580px] border-0 rounded-lg shadow-2xl bg-[#FFFDFC]"
+                        scrolling="no"
+                        allow="autoplay; encrypted-media"
+                      />
+                    </div>
+                  );
+                }
+
+                if (mediaInfo.type === 'youtube' && mediaInfo.embedUrl) {
+                  return (
+                    <iframe
+                      src={mediaInfo.embedUrl}
+                      title="YouTube Showcase"
+                      className="w-full h-[360px] sm:h-[440px] lg:h-full border-0 object-cover"
+                      allow="autoplay; encrypted-media"
+                    />
+                  );
+                }
+
+                if (mediaInfo.type === 'video') {
+                  return (
+                    <video
+                      key={currentHero.mediaUrl}
+                      src={currentHero.mediaUrl}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
+                    />
+                  );
+                }
+
+                return (
+                  <img
+                    src={currentHero.mediaUrl}
+                    alt={currentHero.titleLine1}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-[360px] sm:h-[440px] lg:h-full object-cover object-top lg:object-right transition-all duration-700"
+                  />
+                );
+              })()}
               {/* Soft Warm Ivory Editorial Gradient Scrim on Left for Flawless Text Legibility */}
-              <div className="hidden lg:block absolute inset-0 bg-gradient-to-r from-[#F7F0E6] via-[#F7F0E6]/92 to-transparent w-[68%]" />
+              <div className="hidden lg:block absolute inset-0 bg-gradient-to-r from-[#F7F0E6] via-[#F7F0E6]/92 to-transparent w-[55%] pointer-events-none" />
             </div>
 
             {/* Left Editorial Typography Module */}

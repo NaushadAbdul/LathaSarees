@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useStore, OrderRecord } from '../context/StoreContext';
 import { BRAND_IMAGES, Product } from '../data/catalog';
+import { parseHeroMedia, extractPinterestPinId, isPinterestUrl } from '../utils/mediaEmbed';
 
 const PRESET_IMAGES = [
   { label: 'Crimson Banarasi Saree', url: BRAND_IMAGES.sareeBanarasiCrimson },
@@ -56,6 +57,17 @@ const PRESET_HERO_IMAGES = [
   { label: 'Maharani Temple Lakshmi Haram', url: BRAND_IMAGES.jewelryLakshmiNecklace },
   { label: 'Antique Kemp Temple Jhumkas', url: BRAND_IMAGES.jewelryTempleJhumka },
   { label: 'Nizam Kundan Bangles', url: BRAND_IMAGES.jewelryKundanBangles },
+];
+
+const PRESET_PINTEREST_PINS = [
+  {
+    label: 'Traditional Loom Weaving Silk Drape Pin',
+    url: 'https://in.pinterest.com/pin/31384528648409924/',
+  },
+  {
+    label: 'Royal Bridal Saree Portrait Pin',
+    url: 'https://www.pinterest.com/pin/84625458624935670/',
+  },
 ];
 
 export const AdminDashboard: React.FC<{
@@ -139,7 +151,7 @@ export const AdminDashboard: React.FC<{
   );
 
   // Hero Section State
-  const [heroMediaType, setHeroMediaType] = useState<'image' | 'video'>(
+  const [heroMediaType, setHeroMediaType] = useState<'image' | 'video' | 'pinterest'>(
     settings.heroMediaType || 'image'
   );
   const [heroMediaSource, setHeroMediaSource] = useState<'url' | 'system'>(
@@ -1201,30 +1213,57 @@ export const AdminDashboard: React.FC<{
                       <label className="block text-[#806B5E] mb-1.5 font-medium">
                         Media Format:
                       </label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-2">
                         <button
                           type="button"
-                          onClick={() => setHeroMediaType('image')}
-                          className={`py-2.5 px-3 border flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-colors ${
+                          onClick={() => {
+                            setHeroMediaType('image');
+                            if (!heroMediaUrl || isPinterestUrl(heroMediaUrl)) {
+                              setHeroMediaUrl(BRAND_IMAGES.heroBridal);
+                            }
+                          }}
+                          className={`py-2.5 px-2 border flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wider transition-colors ${
                             heroMediaType === 'image'
                               ? 'bg-[#4A1C24] text-[#F7F0E6] border-[#4A1C24]'
                               : 'bg-[#FFFDFC] text-[#33221C] border-[#B99A62]/40 hover:bg-[#EFE2D1]'
                           }`}
                         >
-                          <ImageIcon className="w-4 h-4" />
-                          Image Background
+                          <ImageIcon className="w-4 h-4 shrink-0" />
+                          <span>Image</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setHeroMediaType('video')}
-                          className={`py-2.5 px-3 border flex items-center justify-center gap-2 text-xs font-semibold tracking-wider transition-colors ${
+                          onClick={() => {
+                            setHeroMediaType('video');
+                            if (!heroMediaUrl || isPinterestUrl(heroMediaUrl)) {
+                              setHeroMediaUrl(PRESET_HERO_VIDEOS[0].url);
+                            }
+                          }}
+                          className={`py-2.5 px-2 border flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wider transition-colors ${
                             heroMediaType === 'video'
                               ? 'bg-[#4A1C24] text-[#F7F0E6] border-[#4A1C24]'
                               : 'bg-[#FFFDFC] text-[#33221C] border-[#B99A62]/40 hover:bg-[#EFE2D1]'
                           }`}
                         >
-                          <Video className="w-4 h-4" />
-                          Cinematic Video
+                          <Video className="w-4 h-4 shrink-0" />
+                          <span>Video</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroMediaType('pinterest');
+                            if (!heroMediaUrl || !isPinterestUrl(heroMediaUrl)) {
+                              setHeroMediaUrl('https://in.pinterest.com/pin/31384528648409924/');
+                            }
+                          }}
+                          className={`py-2.5 px-2 border flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wider transition-colors ${
+                            heroMediaType === 'pinterest'
+                              ? 'bg-[#E60023] text-white border-[#E60023]'
+                              : 'bg-[#FFFDFC] text-[#33221C] border-[#B99A62]/40 hover:bg-[#EFE2D1]'
+                          }`}
+                        >
+                          <Sparkles className="w-4 h-4 shrink-0 text-amber-300" />
+                          <span>Pinterest Pin</span>
                         </button>
                       </div>
                     </div>
@@ -1264,7 +1303,39 @@ export const AdminDashboard: React.FC<{
                     {/* When Source is URL */}
                     {heroMediaSource === 'url' && (
                       <div className="space-y-3 pt-2 border-t border-[#B99A62]/20">
-                        {heroMediaType === 'image' ? (
+                        {heroMediaType === 'pinterest' ? (
+                          <>
+                            <div>
+                              <label className="block font-medium text-[#33221C] mb-1">
+                                Pinterest Presets
+                              </label>
+                              <select
+                                value={heroMediaUrl}
+                                onChange={(e) => setHeroMediaUrl(e.target.value)}
+                                className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
+                              >
+                                {PRESET_PINTEREST_PINS.map((pin) => (
+                                  <option key={pin.label} value={pin.url}>
+                                    Preset: {pin.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block font-medium text-[#33221C] mb-1">
+                                Enter Any Pinterest Pin Link (URL)
+                              </label>
+                              <input
+                                type="url"
+                                required
+                                value={heroMediaUrl}
+                                onChange={(e) => setHeroMediaUrl(e.target.value)}
+                                placeholder="https://in.pinterest.com/pin/31384528648409924/"
+                                className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
+                              />
+                            </div>
+                          </>
+                        ) : heroMediaType === 'image' ? (
                           <>
                             <div>
                               <label className="block font-medium text-[#33221C] mb-1">
@@ -1284,14 +1355,14 @@ export const AdminDashboard: React.FC<{
                             </div>
                             <div>
                               <label className="block font-medium text-[#33221C] mb-1">
-                                Or Enter Custom Image URL Link
+                                Or Enter Custom Image URL Link (or Pinterest Pin)
                               </label>
                               <input
                                 type="url"
                                 required
                                 value={heroMediaUrl}
                                 onChange={(e) => setHeroMediaUrl(e.target.value)}
-                                placeholder="https://images.unsplash.com/..."
+                                placeholder="https://images.unsplash.com/... or Pinterest Pin URL"
                                 className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
                               />
                             </div>
@@ -1316,19 +1387,38 @@ export const AdminDashboard: React.FC<{
                             </div>
                             <div>
                               <label className="block font-medium text-[#33221C] mb-1">
-                                Or Enter Custom Direct Video Link (MP4 / WebM URL)
+                                Or Enter Custom Video Link (MP4, YouTube, or Pinterest Pin URL)
                               </label>
                               <input
                                 type="url"
                                 required
                                 value={heroMediaUrl}
                                 onChange={(e) => setHeroMediaUrl(e.target.value)}
-                                placeholder="https://.../video.mp4"
+                                placeholder="https://.../video.mp4, YouTube, or Pinterest Pin URL"
                                 className="w-full px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/40"
                               />
                             </div>
                           </>
                         )}
+
+                        {/* Automatic Pinterest Detection Feedback Banner */}
+                        {(() => {
+                          const detectedPinId = extractPinterestPinId(heroMediaUrl);
+                          if (detectedPinId) {
+                            return (
+                              <div className="p-3 bg-rose-50 border border-rose-300 text-rose-900 rounded-sm text-xs flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 font-medium">
+                                  <CheckCircle2 className="w-4 h-4 text-[#E60023]" />
+                                  Pinterest Pin detected (ID: <strong>{detectedPinId}</strong>)
+                                </span>
+                                <span className="text-[10px] bg-[#E60023] text-white px-2 py-0.5 rounded-full font-bold">
+                                  Auto-Embedded
+                                </span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
 
@@ -1531,7 +1621,11 @@ export const AdminDashboard: React.FC<{
                       Storefront Hero Live Preview
                     </h3>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-200">
-                      {heroMediaType === 'video' ? 'Video Playing' : 'Live Image'}
+                      {extractPinterestPinId(heroMediaUrl)
+                        ? 'Pinterest Pin Live'
+                        : heroMediaType === 'video'
+                        ? 'Video Playing'
+                        : 'Live Image'}
                     </span>
                   </div>
 
@@ -1539,26 +1633,57 @@ export const AdminDashboard: React.FC<{
                   <div className="border border-[#B99A62]/40 bg-[#EFE2D1] overflow-hidden shadow-sm relative min-h-[360px] flex flex-col justify-between">
                     {/* Background Media */}
                     <div className="absolute inset-0 bg-[#2C1814] overflow-hidden">
-                      {heroMediaType === 'video' ? (
-                        <video
-                          key={heroMediaUrl}
-                          src={heroMediaUrl}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover object-right"
-                        />
-                      ) : (
-                        <img
-                          src={heroMediaUrl}
-                          alt="Hero Preview"
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover object-right"
-                        />
-                      )}
+                      {(() => {
+                        const previewMedia = parseHeroMedia(heroMediaUrl, heroMediaType);
+
+                        if (previewMedia.type === 'pinterest' && previewMedia.pinId) {
+                          return (
+                            <div className="w-full h-full flex items-center justify-end pr-2 py-2">
+                              <iframe
+                                src={`https://assets.pinterest.com/ext/embed.html?id=${previewMedia.pinId}`}
+                                title="Pinterest Live Preview"
+                                className="w-[200px] h-[340px] border-0 rounded-md shadow-lg bg-white"
+                                scrolling="no"
+                              />
+                            </div>
+                          );
+                        }
+
+                        if (previewMedia.type === 'youtube' && previewMedia.embedUrl) {
+                          return (
+                            <iframe
+                              src={previewMedia.embedUrl}
+                              title="YouTube Preview"
+                              className="w-full h-full border-0 object-cover"
+                            />
+                          );
+                        }
+
+                        if (previewMedia.type === 'video') {
+                          return (
+                            <video
+                              key={heroMediaUrl}
+                              src={heroMediaUrl}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="w-full h-full object-cover object-right"
+                            />
+                          );
+                        }
+
+                        return (
+                          <img
+                            src={heroMediaUrl}
+                            alt="Hero Preview"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover object-right"
+                          />
+                        );
+                      })()}
                       {/* Ivory Gradient Scrim */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#F7F0E6] via-[#F7F0E6]/90 to-transparent w-[75%]" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#F7F0E6] via-[#F7F0E6]/90 to-transparent w-[65%] pointer-events-none" />
                     </div>
 
                     {/* Content Layer */}

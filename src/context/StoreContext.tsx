@@ -88,7 +88,7 @@ export interface StoreSettings {
   storyImageUrl?: string;
 
   // Hero Section Customization
-  heroMediaType?: 'image' | 'video';
+  heroMediaType?: 'image' | 'video' | 'pinterest';
   heroMediaUrl?: string;
   heroMediaSource?: 'url' | 'system';
   heroMediaFileName?: string;
