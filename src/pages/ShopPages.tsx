@@ -141,9 +141,9 @@ export const CatalogPage: React.FC<{
               loop
               muted
               playsInline
-              className="w-full h-full object-cover opacity-35"
+              className="w-full h-full object-cover opacity-20"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#2C1814]/85 via-[#2C1814]/75 to-[#2C1814]/90" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#2C1814]/75 via-[#2C1814]/60 to-[#2C1814]/80" />
           </div>
         )}
         <div className="relative z-10 max-w-3xl mx-auto">
