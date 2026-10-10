@@ -25,6 +25,7 @@ import {
   FaqAndLegalPage,
 } from './pages/CheckoutAndAccount';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { NotFoundPage } from './pages/NotFound';
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -66,7 +67,7 @@ export default function App() {
               <Route path="/admin/orders" element={<AdminDashboard initialTab="orders" />} />
               <Route path="/admin/story" element={<AdminDashboard initialTab="story" />} />
               <Route path="/admin/settings" element={<AdminDashboard initialTab="settings" />} />
-              <Route path="*" element={<Home />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />
