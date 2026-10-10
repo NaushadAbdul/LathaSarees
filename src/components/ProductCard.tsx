@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Eye, ShoppingBag } from 'lucide-react';
-import { Product } from '../data/catalog';
+import { Product, resolveAssetUrl } from '../data/catalog';
 import { useStore } from '../context/StoreContext';
 
 export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
@@ -10,8 +10,9 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
   const [hovered, setHovered] = useState(false);
 
   const isWishlisted = wishlistIds.includes(product.id);
-  const displayImage =
+  const rawImage =
     hovered && product.images.length > 1 ? product.images[1] : product.thumbnail;
+  const displayImage = resolveAssetUrl(rawImage);
 
   return (
     <div

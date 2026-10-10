@@ -23,16 +23,38 @@ export interface Product {
   collectionSlug?: string;
 }
 
+import heroBridalImg from '../assets/images/hero_indian_bridal_saree_1791476960167.jpg';
+import sareeBanarasiCrimsonImg from '../assets/images/saree_banarasi_crimson_1791476972608.jpg';
+import sareeKanchipuramEmeraldImg from '../assets/images/saree_kanchipuram_emerald_1791476983737.jpg';
+import jewelryTempleJhumkaImg from '../assets/images/jewelry_temple_jhumka_1791476992802.jpg';
+import jewelryLakshmiNecklaceImg from '../assets/images/jewelry_lakshmi_necklace_1791477003454.jpg';
+import jewelryKundanBanglesImg from '../assets/images/jewelry_kundan_bangles_1791477012771.jpg';
 import sareesVideo from '../assets/images/sareesvideo.mp4';
 import jewelryVideo from '../assets/images/Woman_showcasing_gold_jewellery_1080p_20261010025311_gwr_video_mvp.mp4';
 
+export const resolveAssetUrl = (url?: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (url.includes('hero_indian_bridal_saree')) return heroBridalImg;
+  if (url.includes('saree_banarasi_crimson')) return sareeBanarasiCrimsonImg;
+  if (url.includes('saree_kanchipuram_emerald')) return sareeKanchipuramEmeraldImg;
+  if (url.includes('jewelry_temple_jhumka')) return jewelryTempleJhumkaImg;
+  if (url.includes('jewelry_lakshmi_necklace')) return jewelryLakshmiNecklaceImg;
+  if (url.includes('jewelry_kundan_bangles')) return jewelryKundanBanglesImg;
+  if (url.includes('sareesvideo')) return sareesVideo;
+  if (url.includes('Woman_showcasing_gold_jewellery')) return jewelryVideo;
+  return url;
+};
+
 export const BRAND_IMAGES = {
-  heroBridal: '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
-  sareeBanarasiCrimson: '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
-  sareeKanchipuramEmerald: '/src/assets/images/saree_kanchipuram_emerald_1791476983737.jpg',
-  jewelryTempleJhumka: '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
-  jewelryLakshmiNecklace: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
-  jewelryKundanBangles: '/src/assets/images/jewelry_kundan_bangles_1791477012771.jpg',
+  heroBridal: heroBridalImg,
+  sareeBanarasiCrimson: sareeBanarasiCrimsonImg,
+  sareeKanchipuramEmerald: sareeKanchipuramEmeraldImg,
+  jewelryTempleJhumka: jewelryTempleJhumkaImg,
+  jewelryLakshmiNecklace: jewelryLakshmiNecklaceImg,
+  jewelryKundanBangles: jewelryKundanBanglesImg,
   sareesVideo: sareesVideo,
   jewelryVideo: jewelryVideo,
 };
@@ -50,10 +72,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 16500,
     discount: 22,
     images: [
-      '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
-      '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
+      sareeBanarasiCrimsonImg,
+      heroBridalImg,
     ],
-    thumbnail: '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
+    thumbnail: sareeBanarasiCrimsonImg,
     stock: 6,
     sku: 'LTH-SAR-BAN-001',
     colors: ['Deep Wine', 'Crimson Gold'],
@@ -78,10 +100,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 4800,
     discount: 19,
     images: [
-      '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
-      '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
+      jewelryTempleJhumkaImg,
+      jewelryLakshmiNecklaceImg,
     ],
-    thumbnail: '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
+    thumbnail: jewelryTempleJhumkaImg,
     stock: 14,
     sku: 'LTH-JWL-JHM-002',
     colors: ['Antique Gold', 'Kemp Ruby'],
@@ -106,10 +128,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 11200,
     discount: 21,
     images: [
-      '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
-      '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
+      jewelryLakshmiNecklaceImg,
+      jewelryTempleJhumkaImg,
     ],
-    thumbnail: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
+    thumbnail: jewelryLakshmiNecklaceImg,
     stock: 4,
     sku: 'LTH-JWL-NCK-003',
     colors: ['Antique Gold', 'Ruby & Pearl'],
@@ -134,10 +156,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 18500,
     discount: 19,
     images: [
-      '/src/assets/images/saree_kanchipuram_emerald_1791476983737.jpg',
-      '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
+      sareeKanchipuramEmeraldImg,
+      sareeBanarasiCrimsonImg,
     ],
-    thumbnail: '/src/assets/images/saree_kanchipuram_emerald_1791476983737.jpg',
+    thumbnail: sareeKanchipuramEmeraldImg,
     stock: 5,
     sku: 'LTH-SAR-KAN-004',
     colors: ['Emerald Green', 'Antique Gold'],
@@ -162,10 +184,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 7990,
     discount: 19,
     images: [
-      '/src/assets/images/jewelry_kundan_bangles_1791477012771.jpg',
-      '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
+      jewelryKundanBanglesImg,
+      jewelryLakshmiNecklaceImg,
     ],
-    thumbnail: '/src/assets/images/jewelry_kundan_bangles_1791477012771.jpg',
+    thumbnail: jewelryKundanBanglesImg,
     stock: 9,
     sku: 'LTH-JWL-BNG-005',
     colors: ['Antique Gold', 'Pearl White'],
@@ -190,10 +212,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 19200,
     discount: 18,
     images: [
-      '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
-      '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
+      heroBridalImg,
+      sareeBanarasiCrimsonImg,
     ],
-    thumbnail: '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
+    thumbnail: heroBridalImg,
     stock: 3,
     sku: 'LTH-SAR-SLK-006',
     colors: ['Deep Wine', 'Champagne Gold'],
@@ -218,10 +240,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 14900,
     discount: 21,
     images: [
-      '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
-      '/src/assets/images/jewelry_temple_jhumka_1791476992802.jpg',
+      jewelryLakshmiNecklaceImg,
+      jewelryTempleJhumkaImg,
     ],
-    thumbnail: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
+    thumbnail: jewelryLakshmiNecklaceImg,
     stock: 7,
     sku: 'LTH-JWL-SET-007',
     colors: ['Antique Gold', 'Deep Ruby'],
@@ -246,10 +268,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 9490,
     discount: 21,
     images: [
-      '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
-      '/src/assets/images/saree_kanchipuram_emerald_1791476983737.jpg',
+      sareeBanarasiCrimsonImg,
+      sareeKanchipuramEmeraldImg,
     ],
-    thumbnail: '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
+    thumbnail: sareeBanarasiCrimsonImg,
     stock: 11,
     sku: 'LTH-SAR-ORG-008',
     colors: ['Wine Rose', 'Antique Gold'],
@@ -279,7 +301,7 @@ export const CURATED_COLLECTIONS: CuratedCollection[] = [
     title: 'The Bridal & Muhurtham Edit',
     subtitle: 'Heirloom Silk & Temple Gold',
     description: 'Statement Banarasi and Kanchipuram drapes paired with sacred Lakshmi temple jewelry for unforgettable weddings.',
-    image: '/src/assets/images/hero_indian_bridal_saree_1791476960167.jpg',
+    image: heroBridalImg,
     itemCount: '18 Curated Pieces',
   },
   {
@@ -287,7 +309,7 @@ export const CURATED_COLLECTIONS: CuratedCollection[] = [
     title: 'The Festive Heritage Edit',
     subtitle: 'Celebratory Weaves & Jhumkas',
     description: 'Rich jewel tones, pure zari borders, and handcrafted Kemp pearl jewelry curated for auspicious celebrations.',
-    image: '/src/assets/images/saree_banarasi_crimson_1791476972608.jpg',
+    image: sareeBanarasiCrimsonImg,
     itemCount: '24 Curated Pieces',
   },
   {
@@ -295,7 +317,7 @@ export const CURATED_COLLECTIONS: CuratedCollection[] = [
     title: 'Sacred Temple Jewelry',
     subtitle: 'Nakshi & Kemp Craftsmanship',
     description: 'Intricate South Indian temple necklaces, jhumkas, and kadas sculpted with timeless devotion.',
-    image: '/src/assets/images/jewelry_lakshmi_necklace_1791477003454.jpg',
+    image: jewelryLakshmiNecklaceImg,
     itemCount: '16 Curated Pieces',
   },
   {
@@ -303,7 +325,7 @@ export const CURATED_COLLECTIONS: CuratedCollection[] = [
     title: 'Sovereign Silk Classics',
     subtitle: 'Kanchipuram & Organza Drapes',
     description: 'Effortless handloom silks and refined jewelry silhouettes designed to be cherished across generations.',
-    image: '/src/assets/images/saree_kanchipuram_emerald_1791476983737.jpg',
+    image: sareeKanchipuramEmeraldImg,
     itemCount: '14 Curated Pieces',
   },
 ];

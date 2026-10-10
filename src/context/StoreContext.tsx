@@ -25,7 +25,7 @@ import {
   handleFirestoreError,
   OperationType,
 } from '../firebase';
-import { INITIAL_PRODUCTS, Product, BRAND_IMAGES } from '../data/catalog';
+import { INITIAL_PRODUCTS, Product, BRAND_IMAGES, resolveAssetUrl } from '../data/catalog';
 import { saveLocalMedia, getLocalMedia, deleteLocalMedia } from '../utils/mediaStorage';
 
 export interface CartItem {
@@ -427,8 +427,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               price: Number(data.price),
               originalPrice: Number(data.originalPrice),
               discount: Number(data.discount),
-              images: Array.isArray(data.images) ? data.images : [data.thumbnail],
-              thumbnail: data.thumbnail,
+              images: (Array.isArray(data.images) ? data.images : [data.thumbnail]).map((img: string) => resolveAssetUrl(img)),
+              thumbnail: resolveAssetUrl(data.thumbnail),
               stock: Number(data.stock),
               sku: data.sku,
               colors: Array.isArray(data.colors) ? data.colors : ['Antique Gold'],
