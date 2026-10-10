@@ -309,7 +309,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('latha_store_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        const mergedSlides = Array.isArray(parsed.heroSlides) && parsed.heroSlides.length > 0
+        let mergedSlides = Array.isArray(parsed.heroSlides) && parsed.heroSlides.length > 0
           ? parsed.heroSlides
           : DEFAULT_HERO_SLIDES.map((s, idx) => {
               if (idx === 0 && (parsed.heroTitleLine1 || parsed.heroMediaUrl)) {
@@ -332,7 +332,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               }
               return s;
             });
-        return { ...DEFAULT_SETTINGS, ...parsed, heroSlides: mergedSlides };
+
+        // Remove the deprecated "TIMELESS INDIAN" slide from any cached data
+        mergedSlides = mergedSlides.filter(
+          (s: HeroSlideConfig) => s.titleLine1 !== 'TIMELESS INDIAN'
+        );
+        // Renumber slide IDs after filtering
+        mergedSlides = mergedSlides.map((s: HeroSlideConfig, i: number) => ({ ...s, id: i }));
+        // Fall back to defaults if all slides were removed
+        if (mergedSlides.length === 0) {
+          mergedSlides = DEFAULT_HERO_SLIDES;
+        }
+
+        // Persist the cleaned slides back so the old slide doesn't come back
+        const cleanedSettings = { ...DEFAULT_SETTINGS, ...parsed, heroSlides: mergedSlides };
+        try {
+          localStorage.setItem('latha_store_settings', JSON.stringify(cleanedSettings));
+        } catch { /* ignore */ }
+
+        return cleanedSettings;
       }
       return DEFAULT_SETTINGS;
     } catch {

@@ -181,32 +181,32 @@ export const AdminDashboard: React.FC<{
     settings.heroMediaFileName || ''
   );
   const [heroTitleLine1, setHeroTitleLine1] = useState(
-    settings.heroTitleLine1 || 'TIMELESS INDIAN'
+    settings.heroTitleLine1 || 'HEIRLOOM SILK'
   );
   const [heroTitleLine2, setHeroTitleLine2] = useState(
-    settings.heroTitleLine2 || 'ELEGANCE,'
+    settings.heroTitleLine2 || 'DRAPES,'
   );
   const [heroSubtitleGold, setHeroSubtitleGold] = useState(
-    settings.heroSubtitleGold || 'PRECIOUS & WOVEN FOR YOU.'
+    settings.heroSubtitleGold || 'HANDWOVEN IN KANCHIPURAM & KASHI.'
   );
   const [heroKicker, setHeroKicker] = useState(
-    settings.heroKicker || 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE'
+    settings.heroKicker || 'PURE MULBERRY SILK · KORVAI ZARI · BRIDAL TROUSSEAU'
   );
   const [heroDescription, setHeroDescription] = useState(
     settings.heroDescription ||
-      'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.'
+      'Each saree in the Latha archive is selected directly from master weaver looms for its lustrous drape and architectural gold zari.'
   );
   const [heroPrimaryCtaText, setHeroPrimaryCtaText] = useState(
-    settings.heroPrimaryCtaText || 'DISCOVER THE COLLECTION'
+    settings.heroPrimaryCtaText || 'SHOP SAREES'
   );
   const [heroPrimaryCtaLink, setHeroPrimaryCtaLink] = useState(
-    settings.heroPrimaryCtaLink || '/shop'
+    settings.heroPrimaryCtaLink || '/sarees'
   );
   const [heroSecondaryCtaText, setHeroSecondaryCtaText] = useState(
-    settings.heroSecondaryCtaText || 'EXPLORE JEWELRY'
+    settings.heroSecondaryCtaText || 'BRIDAL EDIT'
   );
   const [heroSecondaryCtaLink, setHeroSecondaryCtaLink] = useState(
-    settings.heroSecondaryCtaLink || '/jewelry'
+    settings.heroSecondaryCtaLink || '/collections/wedding-collection'
   );
 
   useEffect(() => {
@@ -1566,7 +1566,7 @@ export const AdminDashboard: React.FC<{
                           type="text"
                           value={heroTitleLine1}
                           onChange={(e) => setHeroTitleLine1(e.target.value)}
-                          placeholder="e.g. TIMELESS INDIAN"
+                          placeholder="e.g. HEIRLOOM SILK"
                           className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
                         />
                       </div>
@@ -1777,10 +1777,10 @@ export const AdminDashboard: React.FC<{
                       </p>
 
                       <div className="font-serif-luxury text-xl sm:text-2xl leading-tight text-[#33221C]">
-                        <div>{heroTitleLine1 || 'TIMELESS INDIAN'}</div>
-                        <div>{heroTitleLine2 || 'ELEGANCE,'}</div>
+                        <div>{heroTitleLine1 || 'HEIRLOOM SILK'}</div>
+                        <div>{heroTitleLine2 || 'DRAPES,'}</div>
                         <div className="text-[#B99A62] text-sm sm:text-base font-medium mt-0.5">
-                          {heroSubtitleGold || 'PRECIOUS & WOVEN FOR YOU.'}
+                          {heroSubtitleGold || 'HANDWOVEN IN KANCHIPURAM & KASHI.'}
                         </div>
                       </div>
 
