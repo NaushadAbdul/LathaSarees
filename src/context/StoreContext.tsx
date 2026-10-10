@@ -258,6 +258,47 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   heroSlides: DEFAULT_HERO_SLIDES,
 };
 
+export function sanitizeHeroSlides(slides: unknown): HeroSlideConfig[] {
+  if (!Array.isArray(slides) || slides.length === 0) {
+    return DEFAULT_HERO_SLIDES;
+  }
+  const filtered = slides.filter((s: HeroSlideConfig) => {
+    if (!s) return false;
+    const t1 = (s.titleLine1 || '').trim().toUpperCase();
+    const t2 = (s.titleLine2 || '').trim().toUpperCase();
+    const kicker = (s.kicker || '').toUpperCase();
+    const desc = (s.description || '').toUpperCase();
+    const url = (s.mediaUrl || '').toLowerCase();
+    // Exclude the deprecated first slide ("TIMELESS INDIAN ELEGANCE" / photo-1610030469983)
+    if (
+      t1.includes('TIMELESS') ||
+      t2.includes('ELEGANCE') ||
+      kicker.includes('SAREES · TEMPLE JEWELRY · JHUMKAS') ||
+      desc.includes('BANARASI AND KANCHIPURAM SILKS ALONGSIDE SACRED') ||
+      url.includes('1610030469983')
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    return DEFAULT_HERO_SLIDES;
+  }
+
+  // Strictly keep only the 2 desired slides (Sarees and Jewelry)
+  return filtered.slice(0, 2).map((s: HeroSlideConfig, idx: number) => {
+    const defaultSlide = DEFAULT_HERO_SLIDES[idx] || DEFAULT_HERO_SLIDES[0];
+    return {
+      ...defaultSlide,
+      ...s,
+      id: idx,
+      mediaUrl: s.mediaUrl || defaultSlide.mediaUrl,
+      mediaType: s.mediaType || defaultSlide.mediaType,
+    };
+  });
+}
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deletedIds, setDeletedIds] = useState<string[]>(() => {
     try {
@@ -309,43 +350,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('latha_store_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        let mergedSlides = Array.isArray(parsed.heroSlides) && parsed.heroSlides.length > 0
-          ? parsed.heroSlides
-          : DEFAULT_HERO_SLIDES.map((s, idx) => {
-              if (idx === 0 && (parsed.heroTitleLine1 || parsed.heroMediaUrl)) {
-                return {
-                  ...s,
-                  titleLine1: parsed.heroTitleLine1 || s.titleLine1,
-                  titleLine2: parsed.heroTitleLine2 || s.titleLine2,
-                  subtitleGold: parsed.heroSubtitleGold || s.subtitleGold,
-                  kicker: parsed.heroKicker || s.kicker,
-                  description: parsed.heroDescription || s.description,
-                  mediaType: parsed.heroMediaType || s.mediaType,
-                  mediaSource: parsed.heroMediaSource || s.mediaSource,
-                  mediaUrl: parsed.heroMediaUrl || s.mediaUrl,
-                  mediaFileName: parsed.heroMediaFileName || s.mediaFileName,
-                  primaryCtaText: parsed.heroPrimaryCtaText || s.primaryCtaText,
-                  primaryCtaLink: parsed.heroPrimaryCtaLink || s.primaryCtaLink,
-                  secondaryCtaText: parsed.heroSecondaryCtaText || s.secondaryCtaText,
-                  secondaryCtaLink: parsed.heroSecondaryCtaLink || s.secondaryCtaLink,
-                };
-              }
-              return s;
-            });
+        const cleanSlides = sanitizeHeroSlides(parsed.heroSlides);
+        const firstSlide = cleanSlides[0] || DEFAULT_HERO_SLIDES[0];
 
-        // Remove the deprecated "TIMELESS INDIAN" slide from any cached data
-        mergedSlides = mergedSlides.filter(
-          (s: HeroSlideConfig) => s.titleLine1 !== 'TIMELESS INDIAN'
-        );
-        // Renumber slide IDs after filtering
-        mergedSlides = mergedSlides.map((s: HeroSlideConfig, i: number) => ({ ...s, id: i }));
-        // Fall back to defaults if all slides were removed
-        if (mergedSlides.length === 0) {
-          mergedSlides = DEFAULT_HERO_SLIDES;
-        }
-
-        // Persist the cleaned slides back so the old slide doesn't come back
-        const cleanedSettings = { ...DEFAULT_SETTINGS, ...parsed, heroSlides: mergedSlides };
+        // Persist the cleaned slides back so old cached slides are purged
+        const cleanedSettings: StoreSettings = {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          heroSlides: cleanSlides,
+          heroMediaType: firstSlide.mediaType,
+          heroMediaUrl: firstSlide.mediaUrl,
+          heroMediaSource: firstSlide.mediaSource,
+          heroMediaFileName: firstSlide.mediaFileName,
+          heroTitleLine1: firstSlide.titleLine1,
+          heroTitleLine2: firstSlide.titleLine2,
+          heroSubtitleGold: firstSlide.subtitleGold,
+          heroKicker: firstSlide.kicker,
+          heroDescription: firstSlide.description,
+          heroPrimaryCtaText: firstSlide.primaryCtaText,
+          heroPrimaryCtaLink: firstSlide.primaryCtaLink,
+          secondaryCtaText: firstSlide.secondaryCtaText,
+          secondaryCtaLink: firstSlide.secondaryCtaLink,
+        };
         try {
           localStorage.setItem('latha_store_settings', JSON.stringify(cleanedSettings));
         } catch { /* ignore */ }
@@ -457,32 +483,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .then((snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          setSettings((prev) => ({
-            ...prev,
-            announcementText: data.announcementText || prev.announcementText,
-            freeShippingThreshold: Number(data.freeShippingThreshold ?? prev.freeShippingThreshold),
-            codEnabled: Boolean(data.codEnabled ?? prev.codEnabled),
-            storySubtitle: data.storySubtitle || prev.storySubtitle,
-            storyTitle: data.storyTitle || prev.storyTitle,
-            storyQuote: data.storyQuote || prev.storyQuote,
-            storyParagraph1: data.storyParagraph1 || prev.storyParagraph1,
-            storyParagraph2: data.storyParagraph2 || prev.storyParagraph2,
-            storyImageUrl: data.storyImageUrl || prev.storyImageUrl,
-            heroMediaType: data.heroMediaType || prev.heroMediaType,
-            heroMediaUrl: data.heroMediaUrl || prev.heroMediaUrl,
-            heroMediaSource: data.heroMediaSource || prev.heroMediaSource,
-            heroMediaFileName: data.heroMediaFileName || prev.heroMediaFileName,
-            heroTitleLine1: data.heroTitleLine1 || prev.heroTitleLine1,
-            heroTitleLine2: data.heroTitleLine2 || prev.heroTitleLine2,
-            heroSubtitleGold: data.heroSubtitleGold || prev.heroSubtitleGold,
-            heroKicker: data.heroKicker || prev.heroKicker,
-            heroDescription: data.heroDescription || prev.heroDescription,
-            heroPrimaryCtaText: data.heroPrimaryCtaText || prev.heroPrimaryCtaText,
-            heroPrimaryCtaLink: data.heroPrimaryCtaLink || prev.heroPrimaryCtaLink,
-            heroSecondaryCtaText: data.heroSecondaryCtaText || prev.heroSecondaryCtaText,
-            heroSecondaryCtaLink: data.heroSecondaryCtaLink || prev.heroSecondaryCtaLink,
-            heroSlides: Array.isArray(data.heroSlides) && data.heroSlides.length > 0 ? data.heroSlides : prev.heroSlides,
-          }));
+          const cleanSlides = sanitizeHeroSlides(data.heroSlides);
+          const firstSlide = cleanSlides[0] || DEFAULT_HERO_SLIDES[0];
+          setSettings((prev) => {
+            const updated: StoreSettings = {
+              ...prev,
+              announcementText: data.announcementText || prev.announcementText,
+              freeShippingThreshold: Number(data.freeShippingThreshold ?? prev.freeShippingThreshold),
+              codEnabled: Boolean(data.codEnabled ?? prev.codEnabled),
+              storySubtitle: data.storySubtitle || prev.storySubtitle,
+              storyTitle: data.storyTitle || prev.storyTitle,
+              storyQuote: data.storyQuote || prev.storyQuote,
+              storyParagraph1: data.storyParagraph1 || prev.storyParagraph1,
+              storyParagraph2: data.storyParagraph2 || prev.storyParagraph2,
+              storyImageUrl: data.storyImageUrl || prev.storyImageUrl,
+              heroMediaType: firstSlide.mediaType,
+              heroMediaUrl: firstSlide.mediaUrl,
+              heroMediaSource: firstSlide.mediaSource,
+              heroMediaFileName: firstSlide.mediaFileName,
+              heroTitleLine1: firstSlide.titleLine1,
+              heroTitleLine2: firstSlide.titleLine2,
+              heroSubtitleGold: firstSlide.subtitleGold,
+              heroKicker: firstSlide.kicker,
+              heroDescription: firstSlide.description,
+              heroPrimaryCtaText: firstSlide.primaryCtaText,
+              heroPrimaryCtaLink: firstSlide.primaryCtaLink,
+              heroSecondaryCtaText: firstSlide.secondaryCtaText,
+              heroSecondaryCtaLink: firstSlide.secondaryCtaLink,
+              heroSlides: cleanSlides,
+            };
+            try {
+              localStorage.setItem('latha_store_settings', JSON.stringify(updated));
+            } catch { /* ignore */ }
+            return updated;
+          });
         }
       })
       .catch((error) => {
@@ -978,9 +1012,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const adminUpdateSettings = async (newSettings: StoreSettings) => {
     if (!isAdmin) return;
-    setSettings(newSettings);
+    const cleanSlides = sanitizeHeroSlides(newSettings.heroSlides);
+    const firstSlide = cleanSlides[0] || DEFAULT_HERO_SLIDES[0];
+    const settingsToSave: StoreSettings = {
+      ...newSettings,
+      heroSlides: cleanSlides,
+      heroMediaType: firstSlide.mediaType,
+      heroMediaUrl: firstSlide.mediaUrl,
+      heroMediaSource: firstSlide.mediaSource,
+      heroMediaFileName: firstSlide.mediaFileName,
+      heroTitleLine1: firstSlide.titleLine1,
+      heroTitleLine2: firstSlide.titleLine2,
+      heroSubtitleGold: firstSlide.subtitleGold,
+      heroKicker: firstSlide.kicker,
+      heroDescription: firstSlide.description,
+      heroPrimaryCtaText: firstSlide.primaryCtaText,
+      heroPrimaryCtaLink: firstSlide.primaryCtaLink,
+      secondaryCtaText: firstSlide.secondaryCtaText,
+      secondaryCtaLink: firstSlide.secondaryCtaLink,
+    };
+    setSettings(settingsToSave);
     try {
-      localStorage.setItem('latha_store_settings', JSON.stringify(newSettings));
+      localStorage.setItem('latha_store_settings', JSON.stringify(settingsToSave));
     } catch {
       // ignore storage error
     }
@@ -1010,7 +1063,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         heroPrimaryCtaLink: (newSettings.heroPrimaryCtaLink || '').trim().slice(0, 100),
         heroSecondaryCtaText: (newSettings.heroSecondaryCtaText || '').trim().slice(0, 50),
         heroSecondaryCtaLink: (newSettings.heroSecondaryCtaLink || '').trim().slice(0, 100),
-        heroSlides: (newSettings.heroSlides || DEFAULT_HERO_SLIDES).map((s) => ({
+        heroSlides: cleanSlides.map((s) => ({
           id: Number(s.id),
           titleLine1: (s.titleLine1 || '').trim().slice(0, 100),
           titleLine2: (s.titleLine2 || '').trim().slice(0, 100),

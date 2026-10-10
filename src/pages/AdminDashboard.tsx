@@ -22,7 +22,7 @@ import {
   Play,
   Image as ImageIcon,
 } from 'lucide-react';
-import { useStore, OrderRecord, DEFAULT_HERO_SLIDES, HeroSlideConfig } from '../context/StoreContext';
+import { useStore, OrderRecord, DEFAULT_HERO_SLIDES, HeroSlideConfig, sanitizeHeroSlides } from '../context/StoreContext';
 import { BRAND_IMAGES, Product } from '../data/catalog';
 import { parseHeroMedia, extractPinterestPinId, isPinterestUrl } from '../utils/mediaEmbed';
 
@@ -162,9 +162,7 @@ export const AdminDashboard: React.FC<{
   const [selectedHeroSlideIdx, setSelectedHeroSlideIdx] = useState(0);
 
   const getSlideConfig = (slideIdx: number): HeroSlideConfig => {
-    const list = settings.heroSlides && settings.heroSlides.length > 0
-      ? settings.heroSlides
-      : DEFAULT_HERO_SLIDES;
+    const list = sanitizeHeroSlides(settings.heroSlides);
     return list[slideIdx] || DEFAULT_HERO_SLIDES[slideIdx] || DEFAULT_HERO_SLIDES[0];
   };
 
@@ -437,9 +435,7 @@ export const AdminDashboard: React.FC<{
   const handleSaveHeroSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const currentSlides = [
-      ...(settings.heroSlides && settings.heroSlides.length > 0
-        ? settings.heroSlides
-        : DEFAULT_HERO_SLIDES),
+      ...sanitizeHeroSlides(settings.heroSlides),
     ];
     currentSlides[selectedHeroSlideIdx] = {
       id: selectedHeroSlideIdx,
@@ -1257,15 +1253,14 @@ export const AdminDashboard: React.FC<{
                       </p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 bg-[#4A1C24] text-[#F7F0E6] rounded-xs uppercase tracking-wider self-start sm:self-auto">
-                      Editing Slide {selectedHeroSlideIdx + 1} of 3
+                      Editing Slide {selectedHeroSlideIdx + 1} of 2
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                     {[
-                      { idx: 0, title: 'Slide 1: Main Feature', theme: 'General / Timeless Elegance' },
-                      { idx: 1, title: 'Slide 2: Sarees Edit', theme: 'Heirloom Silk Drapes' },
-                      { idx: 2, title: 'Slide 3: Jewelry Edit', theme: 'Sacred Temple Jewelry' },
+                      { idx: 0, title: 'Slide 1: Sarees Edit', theme: 'Heirloom Silk Drapes (Video)' },
+                      { idx: 1, title: 'Slide 2: Jewelry Edit', theme: 'Sacred Temple Jewelry (Video)' },
                     ].map((tab) => (
                       <button
                         key={tab.idx}

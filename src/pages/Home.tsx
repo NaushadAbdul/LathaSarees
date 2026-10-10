@@ -10,7 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useStore, DEFAULT_HERO_SLIDES } from '../context/StoreContext';
+import { useStore, DEFAULT_HERO_SLIDES, sanitizeHeroSlides } from '../context/StoreContext';
 import { BRAND_IMAGES, CURATED_COLLECTIONS, TESTIMONIALS } from '../data/catalog';
 import { ProductCard } from '../components/ProductCard';
 import { LotusOrnament } from '../components/Navbar';
@@ -80,22 +80,8 @@ export const Home: React.FC = () => {
 
   // Dynamic slides supporting customization for ALL slides from settings.heroSlides
   const slides = useMemo(() => {
-    if (settings.heroSlides && settings.heroSlides.length > 0) {
-      return settings.heroSlides;
-    }
-    return [
-      {
-        ...HERO_SLIDES[0],
-        mediaType: 'video' as const,
-        mediaUrl: BRAND_IMAGES.sareesVideo,
-      },
-      {
-        ...HERO_SLIDES[1],
-        mediaType: 'video' as const,
-        mediaUrl: BRAND_IMAGES.jewelryVideo,
-      },
-    ];
-  }, [settings]);
+    return sanitizeHeroSlides(settings.heroSlides);
+  }, [settings.heroSlides]);
 
   const prevSlide = () => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
