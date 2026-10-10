@@ -19,20 +19,6 @@ import { parseHeroMedia } from '../utils/mediaEmbed';
 const HERO_SLIDES = [
   {
     id: 0,
-    titleLine1: 'TIMELESS INDIAN',
-    titleLine2: 'ELEGANCE,',
-    subtitleGold: 'PRECIOUS & WOVEN FOR YOU.',
-    kicker: 'SAREES · TEMPLE JEWELRY · JHUMKAS · NECKLACES · HERITAGE',
-    description:
-      'Discover handwoven Banarasi and Kanchipuram silks alongside sacred temple jewelry crafted to celebrate every unforgettable occasion.',
-    image: BRAND_IMAGES.heroBridal,
-    primaryCtaText: 'DISCOVER THE COLLECTION',
-    primaryCtaLink: '/shop',
-    secondaryCtaText: 'EXPLORE JEWELRY',
-    secondaryCtaLink: '/jewelry',
-  },
-  {
-    id: 1,
     titleLine1: 'HEIRLOOM SILK',
     titleLine2: 'DRAPES,',
     subtitleGold: 'HANDWOVEN IN KANCHIPURAM & KASHI.',
@@ -46,7 +32,7 @@ const HERO_SLIDES = [
     secondaryCtaLink: '/collections/wedding-collection',
   },
   {
-    id: 2,
+    id: 1,
     titleLine1: 'SACRED TEMPLE',
     titleLine2: 'JEWELRY,',
     subtitleGold: 'SCULPTED IN ANTIQUE GOLD & PEARLS.',
@@ -99,26 +85,12 @@ export const Home: React.FC = () => {
     }
     return [
       {
-        id: 0,
-        titleLine1: settings.heroTitleLine1 || HERO_SLIDES[0].titleLine1,
-        titleLine2: settings.heroTitleLine2 || HERO_SLIDES[0].titleLine2,
-        subtitleGold: settings.heroSubtitleGold || HERO_SLIDES[0].subtitleGold,
-        kicker: settings.heroKicker || HERO_SLIDES[0].kicker,
-        description: settings.heroDescription || HERO_SLIDES[0].description,
-        mediaType: settings.heroMediaType || 'video',
-        mediaUrl: settings.heroMediaUrl || BRAND_IMAGES.sareesVideo,
-        primaryCtaText: settings.heroPrimaryCtaText || HERO_SLIDES[0].primaryCtaText,
-        primaryCtaLink: settings.heroPrimaryCtaLink || HERO_SLIDES[0].primaryCtaLink,
-        secondaryCtaText: settings.heroSecondaryCtaText || HERO_SLIDES[0].secondaryCtaText,
-        secondaryCtaLink: settings.heroSecondaryCtaLink || HERO_SLIDES[0].secondaryCtaLink,
-      },
-      {
-        ...HERO_SLIDES[1],
+        ...HERO_SLIDES[0],
         mediaType: 'video' as const,
         mediaUrl: BRAND_IMAGES.sareesVideo,
       },
       {
-        ...HERO_SLIDES[2],
+        ...HERO_SLIDES[1],
         mediaType: 'video' as const,
         mediaUrl: BRAND_IMAGES.jewelryVideo,
       },
