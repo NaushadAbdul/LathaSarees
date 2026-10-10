@@ -209,8 +209,8 @@ export const DEFAULT_HERO_SLIDES: HeroSlideConfig[] = [
     mediaFileName: '',
     primaryCtaText: 'SHOP SAREES',
     primaryCtaLink: '/sarees',
-    secondaryCtaText: 'BRIDAL EDIT',
-    secondaryCtaLink: '/collections/wedding-collection',
+    secondaryCtaText: 'EXPLORE SAREES',
+    secondaryCtaLink: '/sarees',
   },
   {
     id: 1,
@@ -224,10 +224,10 @@ export const DEFAULT_HERO_SLIDES: HeroSlideConfig[] = [
     mediaSource: 'url',
     mediaUrl: BRAND_IMAGES.jewelryVideo,
     mediaFileName: '',
-    primaryCtaText: 'EXPLORE JEWELRY',
+    primaryCtaText: 'SHOP JEWELRY',
     primaryCtaLink: '/jewelry',
-    secondaryCtaText: 'SHOP JHUMKAS',
-    secondaryCtaLink: '/jewelry?sub=Jhumkas',
+    secondaryCtaText: 'EXPLORE JEWELRY',
+    secondaryCtaLink: '/jewelry',
   },
 ];
 
@@ -253,8 +253,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     'Each saree in the Latha archive is selected directly from master weaver looms for its lustrous drape and architectural gold zari.',
   heroPrimaryCtaText: 'SHOP SAREES',
   heroPrimaryCtaLink: '/sarees',
-  secondaryCtaText: 'BRIDAL EDIT',
-  secondaryCtaLink: '/collections/wedding-collection',
+  secondaryCtaText: 'EXPLORE SAREES',
+  secondaryCtaLink: '/sarees',
   heroSlides: DEFAULT_HERO_SLIDES,
 };
 
@@ -289,10 +289,29 @@ export function sanitizeHeroSlides(slides: unknown): HeroSlideConfig[] {
   // Strictly keep only the 2 desired slides (Sarees and Jewelry)
   return filtered.slice(0, 2).map((s: HeroSlideConfig, idx: number) => {
     const defaultSlide = DEFAULT_HERO_SLIDES[idx] || DEFAULT_HERO_SLIDES[0];
+
+    // Ensure links for Explore Sarees / Explore Jewelry direct to the correct section
+    let secText = s.secondaryCtaText || defaultSlide.secondaryCtaText;
+    let secLink = s.secondaryCtaLink || defaultSlide.secondaryCtaLink;
+    let primText = s.primaryCtaText || defaultSlide.primaryCtaText;
+    let primLink = s.primaryCtaLink || defaultSlide.primaryCtaLink;
+
+    if (idx === 0) {
+      if (secText === 'BRIDAL EDIT' || !secText) secText = 'EXPLORE SAREES';
+      if (secLink === '/collections/wedding-collection' || !secLink) secLink = '/sarees';
+    } else if (idx === 1) {
+      if (secText === 'SHOP JHUMKAS' || !secText) secText = 'EXPLORE JEWELRY';
+      if (secLink === '/jewelry?sub=Jhumkas' || !secLink) secLink = '/jewelry';
+    }
+
     return {
       ...defaultSlide,
       ...s,
       id: idx,
+      primaryCtaText: primText,
+      primaryCtaLink: primLink,
+      secondaryCtaText: secText,
+      secondaryCtaLink: secLink,
       mediaUrl: s.mediaUrl || defaultSlide.mediaUrl,
       mediaType: s.mediaType || defaultSlide.mediaType,
     };

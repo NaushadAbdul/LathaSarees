@@ -28,8 +28,8 @@ const HERO_SLIDES = [
     image: BRAND_IMAGES.sareeBanarasiCrimson,
     primaryCtaText: 'SHOP SAREES',
     primaryCtaLink: '/sarees',
-    secondaryCtaText: 'BRIDAL EDIT',
-    secondaryCtaLink: '/collections/wedding-collection',
+    secondaryCtaText: 'EXPLORE SAREES',
+    secondaryCtaLink: '/sarees',
   },
   {
     id: 1,
@@ -40,10 +40,10 @@ const HERO_SLIDES = [
     description:
       'Intricate South Indian Nakshi artistry hand-set with deep Kemp rubies and natural pearl clusters to complete your ceremonial look.',
     image: BRAND_IMAGES.jewelryLakshmiNecklace,
-    primaryCtaText: 'EXPLORE JEWELRY',
+    primaryCtaText: 'SHOP JEWELRY',
     primaryCtaLink: '/jewelry',
-    secondaryCtaText: 'SHOP JHUMKAS',
-    secondaryCtaLink: '/jewelry?sub=Jhumkas',
+    secondaryCtaText: 'EXPLORE JEWELRY',
+    secondaryCtaLink: '/jewelry',
   },
 ];
 
@@ -208,13 +208,27 @@ export const Home: React.FC = () => {
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
                   to={currentHero.primaryCtaLink}
-                  className="px-7 py-3.5 bg-[#4A1C24] text-[#F7F0E6] text-xs font-medium tracking-[0.18em] hover:bg-[#5A2630] transition-colors whitespace-nowrap"
+                  onClick={(e) => {
+                    if (currentHero.primaryCtaLink?.startsWith('#')) {
+                      e.preventDefault();
+                      const target = document.getElementById(currentHero.primaryCtaLink.slice(1));
+                      target?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="px-7 py-3.5 bg-[#4A1C24] text-[#F7F0E6] text-xs font-medium tracking-[0.18em] hover:bg-[#5A2630] transition-colors whitespace-nowrap cursor-pointer"
                 >
                   {currentHero.primaryCtaText}
                 </Link>
                 <Link
                   to={currentHero.secondaryCtaLink}
-                  className="px-6 py-3.5 border border-[#4A1C24] text-[#4A1C24] text-xs font-medium tracking-[0.18em] hover:bg-[#4A1C24] hover:text-[#F7F0E6] transition-colors whitespace-nowrap"
+                  onClick={(e) => {
+                    if (currentHero.secondaryCtaLink?.startsWith('#')) {
+                      e.preventDefault();
+                      const target = document.getElementById(currentHero.secondaryCtaLink.slice(1));
+                      target?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="px-6 py-3.5 border border-[#4A1C24] text-[#4A1C24] text-xs font-medium tracking-[0.18em] hover:bg-[#4A1C24] hover:text-[#F7F0E6] transition-colors whitespace-nowrap cursor-pointer"
                 >
                   {currentHero.secondaryCtaText}
                 </Link>
@@ -363,9 +377,10 @@ export const Home: React.FC = () => {
       {/* ==================================================
           5. SPLIT PROMOTIONAL COLLECTION BANNERS (Reference Inspired)
       ================================================== */}
-      <section className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 border-b border-[#B99A62]/30">
+      <section id="collections-section" className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-2 border-b border-[#B99A62]/30">
         {/* Left Banner: SAREES */}
-        <div className="relative h-[340px] sm:h-[400px] overflow-hidden group bg-[#3D161E] border-b lg:border-b-0 lg:border-r border-[#B99A62]/40">
+        <div id="sarees" className="scroll-mt-24 relative h-[340px] sm:h-[400px] overflow-hidden group bg-[#3D161E] border-b lg:border-b-0 lg:border-r border-[#B99A62]/40">
+          <div id="sarees-section" className="absolute -top-24" />
           <img
             src={BRAND_IMAGES.sareeBanarasiCrimson}
             alt="Latha Sarees Collection"
@@ -394,7 +409,8 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Right Banner: JEWELRY */}
-        <div className="relative h-[340px] sm:h-[400px] overflow-hidden group bg-[#2A150E]">
+        <div id="jewelry" className="scroll-mt-24 relative h-[340px] sm:h-[400px] overflow-hidden group bg-[#2A150E]">
+          <div id="jewelry-section" className="absolute -top-24" />
           <img
             src={BRAND_IMAGES.jewelryTempleJhumka}
             alt="Latha Indian Jewelry Collection"

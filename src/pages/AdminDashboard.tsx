@@ -201,10 +201,10 @@ export const AdminDashboard: React.FC<{
     settings.heroPrimaryCtaLink || '/sarees'
   );
   const [heroSecondaryCtaText, setHeroSecondaryCtaText] = useState(
-    settings.heroSecondaryCtaText || 'BRIDAL EDIT'
+    settings.heroSecondaryCtaText || 'EXPLORE SAREES'
   );
   const [heroSecondaryCtaLink, setHeroSecondaryCtaLink] = useState(
-    settings.heroSecondaryCtaLink || '/collections/wedding-collection'
+    settings.heroSecondaryCtaLink || '/sarees'
   );
 
   useEffect(() => {
@@ -1633,7 +1633,7 @@ export const AdminDashboard: React.FC<{
                           type="text"
                           value={heroPrimaryCtaText}
                           onChange={(e) => setHeroPrimaryCtaText(e.target.value)}
-                          placeholder="DISCOVER THE COLLECTION"
+                          placeholder={selectedHeroSlideIdx === 0 ? 'SHOP SAREES' : 'SHOP JEWELRY'}
                           className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
                         />
                       </div>
@@ -1645,7 +1645,7 @@ export const AdminDashboard: React.FC<{
                           type="text"
                           value={heroPrimaryCtaLink}
                           onChange={(e) => setHeroPrimaryCtaLink(e.target.value)}
-                          placeholder="/shop"
+                          placeholder={selectedHeroSlideIdx === 0 ? '/sarees' : '/jewelry'}
                           className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
                         />
                       </div>
@@ -1660,7 +1660,7 @@ export const AdminDashboard: React.FC<{
                           type="text"
                           value={heroSecondaryCtaText}
                           onChange={(e) => setHeroSecondaryCtaText(e.target.value)}
-                          placeholder="EXPLORE JEWELRY"
+                          placeholder={selectedHeroSlideIdx === 0 ? 'EXPLORE SAREES' : 'EXPLORE JEWELRY'}
                           className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
                         />
                       </div>
@@ -1672,7 +1672,7 @@ export const AdminDashboard: React.FC<{
                           type="text"
                           value={heroSecondaryCtaLink}
                           onChange={(e) => setHeroSecondaryCtaLink(e.target.value)}
-                          placeholder="/jewelry"
+                          placeholder={selectedHeroSlideIdx === 0 ? '/sarees' : '/jewelry'}
                           className="w-full px-3 py-2 bg-[#F7F0E6] border border-[#B99A62]/40"
                         />
                       </div>
