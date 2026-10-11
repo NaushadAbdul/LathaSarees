@@ -2014,7 +2014,7 @@ export const AdminDashboard: React.FC<{
                 <a
                   href="/about"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="text-xs text-[#B99A62] hover:underline"
                 >
                   Open /about in new tab ↗

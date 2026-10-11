@@ -58,8 +58,8 @@ service cloud.firestore {
       data.price is number && data.price >= 0 && data.price <= 10000000 &&
       data.originalPrice is number && data.originalPrice >= data.price && data.originalPrice <= 10000000 &&
       data.discount is number && data.discount >= 0 && data.discount <= 95 &&
-      data.images is list && data.images.size() >= 1 && data.images.size() <= 8 && data.images[0] is string && data.images[0].size() <= 500 &&
-      data.thumbnail is string && data.thumbnail.size() >= 1 && data.thumbnail.size() <= 500 &&
+      data.images is list && data.images.size() >= 1 && data.images.size() <= 8 && data.images[0] is string && data.images[0].size() <= 2048 &&
+      data.thumbnail is string && data.thumbnail.size() >= 1 && data.thumbnail.size() <= 2048 &&
       data.stock is number && data.stock >= 0 && data.stock <= 10000 &&
       data.sku is string && data.sku.size() >= 2 && data.sku.size() <= 40 &&
       data.colors is list && data.colors.size() >= 1 && data.colors.size() <= 10 && data.colors[0] is string && data.colors[0].size() <= 40 &&
@@ -146,8 +146,7 @@ service cloud.firestore {
 
     function isValidStoreSettings(data) {
       return data.keys().hasAll(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']) &&
-      data.keys().hasOnly(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']) &&
-      data.announcementText is string && data.announcementText.size() >= 5 && data.announcementText.size() <= 200 &&
+      data.announcementText is string && data.announcementText.size() >= 1 && data.announcementText.size() <= 200 &&
       data.freeShippingThreshold is number && data.freeShippingThreshold >= 0 && data.freeShippingThreshold <= 100000 &&
       data.codEnabled is bool &&
       data.updatedAt is timestamp && data.updatedAt == request.time;
@@ -231,8 +230,7 @@ service cloud.firestore {
       allow get: if isValidId(settingId);
       allow list: if false;
       allow create: if isAdmin() && isValidId(settingId) && isValidStoreSettings(incoming());
-      allow update: if isAdmin() && isValidId(settingId) && isValidStoreSettings(incoming()) &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['announcementText', 'freeShippingThreshold', 'codEnabled', 'updatedAt']);
+      allow update: if isAdmin() && isValidId(settingId) && isValidStoreSettings(incoming());
       allow delete: if false;
     }
   }
