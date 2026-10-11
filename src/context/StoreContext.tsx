@@ -253,8 +253,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     'Each saree in the Latha archive is selected directly from master weaver looms for its lustrous drape and architectural gold zari.',
   heroPrimaryCtaText: 'SHOP SAREES',
   heroPrimaryCtaLink: '/sarees',
-  secondaryCtaText: 'EXPLORE SAREES',
-  secondaryCtaLink: '/sarees',
+  heroSecondaryCtaText: 'EXPLORE SAREES',
+  heroSecondaryCtaLink: '/sarees',
   heroSlides: DEFAULT_HERO_SLIDES,
 };
 
@@ -941,6 +941,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updatedProduct: Product = {
       id: productId,
       ...payload,
+      thumbnail: productInput.thumbnail.trim() || payload.thumbnail,
+      images: productInput.images.length > 0 ? productInput.images : payload.images,
     };
 
     setDeletedIds((prev) => {
@@ -1047,8 +1049,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       heroDescription: firstSlide.description,
       heroPrimaryCtaText: firstSlide.primaryCtaText,
       heroPrimaryCtaLink: firstSlide.primaryCtaLink,
-      secondaryCtaText: firstSlide.secondaryCtaText,
-      secondaryCtaLink: firstSlide.secondaryCtaLink,
+      heroSecondaryCtaText: firstSlide.secondaryCtaText,
+      heroSecondaryCtaLink: firstSlide.secondaryCtaLink,
     };
     setSettings(settingsToSave);
     try {

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useStore, OrderRecord } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
-import { BRAND_IMAGES } from '../data/catalog';
+import { BRAND_IMAGES, resolveAssetUrl } from '../data/catalog';
 import { LotusOrnament } from '../components/Navbar';
 
 export const CartPage: React.FC = () => {
@@ -72,11 +72,11 @@ export const CartPage: React.FC = () => {
                   className="bg-[#FFFDFC] border border-[#B99A62]/30 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-5"
                 >
                   <Link
-                    to={`/product/${item.product.slug}`}
+                    to={`/product/${item.product.id}`}
                     className="w-24 h-32 bg-[#2C1814] shrink-0 overflow-hidden border border-[#B99A62]/25"
                   >
                     <img
-                      src={item.product.thumbnail}
+                      src={resolveAssetUrl(item.product.thumbnail)}
                       alt={item.product.name}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
@@ -88,7 +88,7 @@ export const CartPage: React.FC = () => {
                       {item.product.category} · {item.product.subcategory}
                     </p>
                     <Link
-                      to={`/product/${item.product.slug}`}
+                      to={`/product/${item.product.id}`}
                       className="font-serif-luxury text-xl text-[#33221C] hover:text-[#5A2630]"
                     >
                       {item.product.name}
@@ -570,7 +570,7 @@ export const CheckoutPage: React.FC = () => {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={item.product.thumbnail}
+                      src={resolveAssetUrl(item.product.thumbnail)}
                       alt={item.product.name}
                       referrerPolicy="no-referrer"
                       className="w-12 h-16 object-cover bg-[#2C1814]"

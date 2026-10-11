@@ -360,11 +360,18 @@ export const AdminDashboard: React.FC<{
         ? Math.round(((numOriginalPrice - numPrice) / numOriginalPrice) * 100)
         : 0;
 
-    const slug =
+    const rawSlug =
       trimmedName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '') || `prod-${Date.now()}`;
+
+    const slugCollision = products.some(
+      (p) => p.slug === rawSlug && p.id !== editingId
+    );
+    const slug = slugCollision
+      ? `${rawSlug}-${Math.floor(100 + Math.random() * 900)}`
+      : rawSlug;
 
     const finalSku =
       sku.trim() ||

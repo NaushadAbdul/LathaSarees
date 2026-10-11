@@ -15,7 +15,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { CURATED_COLLECTIONS, BRAND_IMAGES } from '../data/catalog';
+import { CURATED_COLLECTIONS, BRAND_IMAGES, resolveAssetUrl } from '../data/catalog';
 import { ProductCard } from '../components/ProductCard';
 import { LotusOrnament } from '../components/Navbar';
 
@@ -428,7 +428,7 @@ export const ProductDetailsPage: React.FC = () => {
   const { products, addToCart, toggleWishlist, wishlistIds, showToast } = useStore();
 
   const product = useMemo(
-    () => products.find((p) => p.slug === slug),
+    () => products.find((p) => p.id === slug || p.slug === slug),
     [products, slug]
   );
 
@@ -518,7 +518,7 @@ export const ProductDetailsPage: React.FC = () => {
           <div className="lg:col-span-6 lg:sticky lg:top-28 space-y-4">
             <div className="relative aspect-[3/4] bg-[#2C1814] border border-[#B99A62]/35 overflow-hidden">
               <img
-                src={product.images[activeImageIdx] || product.thumbnail}
+                src={resolveAssetUrl(product.images[activeImageIdx] || product.thumbnail)}
                 alt={product.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
@@ -547,7 +547,7 @@ export const ProductDetailsPage: React.FC = () => {
                   }`}
                 >
                   <img
-                    src={imgUrl}
+                    src={resolveAssetUrl(imgUrl)}
                     alt={`${product.name} view ${idx + 1}`}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
@@ -843,7 +843,7 @@ export const ProductDetailsPage: React.FC = () => {
             <X className="w-5 h-5" />
           </button>
           <img
-            src={product.images[activeImageIdx] || product.thumbnail}
+            src={resolveAssetUrl(product.images[activeImageIdx] || product.thumbnail)}
             alt={product.name}
             referrerPolicy="no-referrer"
             className="max-h-[90vh] max-w-[90vw] object-contain border border-[#B99A62]/40"

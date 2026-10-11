@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { resolveAssetUrl } from '../data/catalog';
 
 export const Overlays: React.FC = () => {
   const {
@@ -142,12 +143,12 @@ export const Overlays: React.FC = () => {
                     className="flex gap-4 pb-5 border-b border-[#B99A62]/20"
                   >
                     <Link
-                      to={`/product/${item.product.slug}`}
+                      to={`/product/${item.product.id}`}
                       onClick={() => setIsCartOpen(false)}
                       className="w-20 h-26 shrink-0 bg-[#2C1814] border border-[#B99A62]/25 overflow-hidden"
                     >
                       <img
-                        src={item.product.thumbnail}
+                        src={resolveAssetUrl(item.product.thumbnail)}
                         alt={item.product.name}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
@@ -158,7 +159,7 @@ export const Overlays: React.FC = () => {
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <Link
-                            to={`/product/${item.product.slug}`}
+                            to={`/product/${item.product.id}`}
                             onClick={() => setIsCartOpen(false)}
                             className="font-serif-luxury text-base font-medium text-[#33221C] hover:text-[#5A2630] line-clamp-1"
                           >
@@ -343,12 +344,12 @@ export const Overlays: React.FC = () => {
                   {filteredSearchProducts.map((item) => (
                     <Link
                       key={item.id}
-                      to={`/product/${item.slug}`}
+                      to={`/product/${item.id}`}
                       onClick={() => setIsSearchOpen(false)}
                       className="flex items-center gap-4 p-3 bg-[#FFFDFC] border border-[#B99A62]/20 hover:border-[#5A2630] transition-colors"
                     >
                       <img
-                        src={item.thumbnail}
+                        src={resolveAssetUrl(item.thumbnail)}
                         alt={item.name}
                         referrerPolicy="no-referrer"
                         className="w-16 h-20 object-cover bg-[#2C1814] shrink-0"
@@ -389,7 +390,7 @@ export const Overlays: React.FC = () => {
 
             <div className="bg-[#2C1814] aspect-[3/4] md:aspect-auto">
               <img
-                src={quickViewProduct.thumbnail}
+                src={resolveAssetUrl(quickViewProduct.images?.[0] || quickViewProduct.thumbnail)}
                 alt={quickViewProduct.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
@@ -497,7 +498,7 @@ export const Overlays: React.FC = () => {
                   </button>
                 </div>
                 <Link
-                  to={`/product/${quickViewProduct.slug}`}
+                  to={`/product/${quickViewProduct.id}`}
                   onClick={() => setQuickViewProduct(null)}
                   className="block text-center text-xs text-[#5A2630] hover:underline font-medium"
                 >

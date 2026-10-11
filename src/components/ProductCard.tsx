@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Eye, ShoppingBag } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Product, resolveAssetUrl } from '../data/catalog';
 import { useStore } from '../context/StoreContext';
 
 export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  const { addToCart, toggleWishlist, wishlistIds, setQuickViewProduct } = useStore();
+  const { toggleWishlist, wishlistIds } = useStore();
   const [imgError, setImgError] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -22,7 +22,7 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
     >
       {/* Image Frame (72% visual priority, 3:4 aspect ratio) */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#2C1814]">
-        <Link to={`/product/${product.slug}`} className="block w-full h-full">
+        <Link to={`/product/${product.id}`} className="block w-full h-full">
           {!imgError ? (
             <img
               src={displayImage}
@@ -63,25 +63,7 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-[#B99A62]' : ''}`} />
         </button>
 
-        {/* Subtle Bottom Action Strip on Hover */}
-        <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/75 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => addToCart(product, 1, product.colors[0], true)}
-            className="flex-1 py-2 px-3 bg-[#4A1C24] text-[#F7F0E6] hover:bg-[#5A2630] text-[11px] font-medium tracking-[0.12em] flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            Add to Bag
-          </button>
-          <button
-            type="button"
-            onClick={() => setQuickViewProduct(product)}
-            aria-label="Quick view"
-            className="p-2 bg-[#FFFDFC] text-[#33221C] hover:bg-[#EFE2D1] transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-        </div>
+
       </div>
 
       {/* Clean Unboxed Metadata & Centered Editorial Title/Price like Reference */}
@@ -95,7 +77,7 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
             <span>{product.fabric}</span>
           </div>
           <Link
-            to={`/product/${product.slug}`}
+            to={`/product/${product.id}`}
             className="font-serif-luxury text-lg font-medium text-[#33221C] hover:text-[#5A2630] transition-colors line-clamp-1"
           >
             {product.name}
