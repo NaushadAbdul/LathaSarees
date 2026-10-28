@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import {
   Trash2,
   Heart,
@@ -18,6 +18,7 @@ import { useStore, OrderRecord } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
 import { BRAND_IMAGES, resolveAssetUrl } from '../data/catalog';
 import { LotusOrnament } from '../components/Navbar';
+import { parseOrderItems } from '../utils/orderUtils';
 
 export const CartPage: React.FC = () => {
   const { cart, updateCartQuantity, removeFromCart, settings, toggleWishlist } =
@@ -650,79 +651,87 @@ export const AccountPage: React.FC = () => {
   const {
     user,
     isAdmin,
+    authReady,
     profile,
+    products,
     orders,
-    loginWithGoogle,
     logout,
     saveUserProfile,
     cancelCustomerOrder,
   } = useStore();
 
-  const [displayName, setDisplayName] = useState(profile?.displayName || '');
+  const [displayName, setDisplayName] = useState(profile?.displayName || user?.displayName || '');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [addressLine, setAddressLine] = useState(profile?.addressLine || '');
   const [city, setCity] = useState(profile?.city || '');
   const [state, setState] = useState(profile?.state || '');
   const [pincode, setPincode] = useState(profile?.pincode || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Unconditional memoization of user's personal orders — ALWAYS called at top level
+  const myPersonalOrders = React.useMemo(() => {
+    if (!user || !Array.isArray(orders)) return [];
+    return orders.filter(
+      (ord) =>
+        Boolean(ord) &&
+        (ord.userId === user.uid ||
+          (Boolean(ord.customerEmail && user.email) &&
+            typeof ord.customerEmail === 'string' &&
+            ord.customerEmail.toLowerCase() === user.email?.toLowerCase()))
+    );
+  }, [orders, user]);
 
   React.useEffect(() => {
     if (profile) {
-      setDisplayName(profile.displayName);
-      setPhone(profile.phone);
-      setAddressLine(profile.addressLine);
-      setCity(profile.city);
-      setState(profile.state);
-      setPincode(profile.pincode);
+      setDisplayName(profile.displayName || user?.displayName || '');
+      setPhone(profile.phone || '');
+      setAddressLine(profile.addressLine || '');
+      setCity(profile.city || '');
+      setState(profile.state || '');
+      setPincode(profile.pincode || '');
+    } else if (user?.displayName && !displayName) {
+      setDisplayName(user.displayName);
     }
-  }, [profile]);
+  }, [profile, user]);
 
-  if (!user) {
+  if (!authReady) {
     return (
       <div className="bg-[#F7F0E6] min-h-[75vh] flex items-center justify-center py-16 px-4">
-        <div className="max-w-md w-full bg-[#FFFDFC] border border-[#B99A62]/40 p-8 sm:p-10 text-center space-y-6">
+        <div className="max-w-md w-full bg-[#FFFDFC] border border-[#B99A62]/40 p-10 text-center space-y-4 shadow-sm animate-pulse">
           <div className="flex justify-center text-[#B99A62]">
             <LotusOrnament className="w-10 h-6" />
           </div>
-          <h1 className="font-serif-luxury text-3xl sm:text-4xl text-[#33221C]">
-            Patron Account Sign In
-          </h1>
-          <p className="text-xs text-[#806B5E] leading-relaxed">
-            Sign in with your Google account to sync your personal wishlist, manage delivery addresses, and track your Latha Sarees & Jewelry orders in real time.
+          <p className="font-serif-luxury text-2xl text-[#33221C]">
+            Verifying Patron Credentials...
           </p>
-          <button
-            type="button"
-            onClick={loginWithGoogle}
-            className="w-full py-3.5 px-6 bg-[#4A1C24] text-[#F7F0E6] text-xs font-semibold tracking-[0.16em] hover:bg-[#5A2630] transition-colors"
-          >
-            CONTINUE WITH GOOGLE
-          </button>
+          <p className="text-xs text-[#806B5E]">Connecting securely to Latha Boutique Services</p>
         </div>
       </div>
     );
   }
 
+  // If patron is not authenticated, seamlessly redirect to dedicated /login page
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    await saveUserProfile({
-      displayName,
-      email: user.email || '',
-      phone,
-      addressLine,
-      city,
-      state,
-      pincode,
-    });
+    setIsSaving(true);
+    try {
+      await saveUserProfile({
+        displayName,
+        email: user.email || '',
+        phone,
+        addressLine,
+        city,
+        state,
+        pincode,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  const myPersonalOrders = React.useMemo(() => {
-    if (!user) return [];
-    return orders.filter(
-      (ord) =>
-        ord.userId === user.uid ||
-        (Boolean(ord.customerEmail && user.email) &&
-          ord.customerEmail.toLowerCase() === user.email?.toLowerCase())
-    );
-  }, [orders, user]);
 
   return (
     <div className="bg-[#F7F0E6] min-h-[75vh] py-12 px-4 sm:px-8">
@@ -835,9 +844,10 @@ export const AccountPage: React.FC = () => {
               </div>
               <button
                 type="submit"
-                className="w-full py-3 bg-[#4A1C24] text-[#F7F0E6] text-xs font-semibold tracking-[0.14em]"
+                disabled={isSaving}
+                className="w-full py-3 bg-[#4A1C24] text-[#F7F0E6] text-xs font-semibold tracking-[0.14em] hover:bg-[#5A2630] transition-colors disabled:opacity-75"
               >
-                SAVE PROFILE PREFERENCES
+                {isSaving ? 'SAVING PREFERENCES...' : 'SAVE PROFILE PREFERENCES'}
               </button>
             </form>
           </div>
@@ -885,47 +895,122 @@ export const AccountPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {myPersonalOrders.map((ord) => (
-                  <div
-                    key={ord.id}
-                    className="p-5 bg-[#F7F0E6] border border-[#B99A62]/30 space-y-3 text-xs"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#B99A62]/20 pb-2">
-                      <div>
-                        <span className="font-semibold text-[#33221C] tabular-nums">
-                          {ord.orderNumber}
-                        </span>
-                        <span className="text-[#806B5E] ml-2">
-                          · Placed on {ord.createdAt}
+                {myPersonalOrders.map((ord) => {
+                  const parsedItems = parseOrderItems(ord.itemSummary, products);
+                  const primaryThumb = ord.productImage
+                    ? resolveAssetUrl(ord.productImage)
+                    : parsedItems[0]?.imageUrl || resolveAssetUrl(BRAND_IMAGES.heroBridal);
+
+                  return (
+                    <div
+                      key={ord.id || ord.orderNumber}
+                      className="p-5 bg-[#F7F0E6] border border-[#B99A62]/30 space-y-3.5 text-xs shadow-sm hover:border-[#B99A62]/60 transition-colors"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#B99A62]/20 pb-2">
+                        <div>
+                          <span className="font-semibold text-[#33221C] tabular-nums">
+                            {ord.orderNumber || 'Order'}
+                          </span>
+                          <span className="text-[#806B5E] ml-2">
+                            · Placed on {ord.createdAt || 'Recent'}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${
+                            ord.status === 'Delivered'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : ord.status === 'Cancelled' || ord.status === 'Returned'
+                              ? 'bg-red-100 text-red-800 border border-red-300'
+                              : 'bg-[#EFE2D1] text-[#5A2630] border border-[#B99A62]/30'
+                          }`}
+                        >
+                          {ord.status || 'Processing'}
                         </span>
                       </div>
-                      <span className="font-semibold text-[#5A2630]">
-                        Status: {ord.status}
-                      </span>
+
+                      <div className="flex items-start gap-4">
+                        {/* Thumbnail Preview */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {parsedItems.length > 0 ? (
+                            parsedItems.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="relative w-16 h-20 sm:w-20 sm:h-24 rounded bg-[#2C1814] border border-[#B99A62]/40 overflow-hidden shrink-0 shadow-sm group"
+                                title={`${item.name}${item.variant ? ` (${item.variant})` : ''} — Qty: ${item.quantity}`}
+                              >
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = resolveAssetUrl(BRAND_IMAGES.heroBridal);
+                                  }}
+                                />
+                                {item.quantity > 1 && (
+                                  <span className="absolute bottom-1 right-1 bg-[#4A1C24]/90 text-[#F7F0E6] text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                                    ×{item.quantity}
+                                  </span>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded bg-[#2C1814] border border-[#B99A62]/40 overflow-hidden shrink-0 shadow-sm">
+                              <img
+                                src={primaryThumb}
+                                alt={ord.itemSummary || 'Order Item'}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Order info & parsed items */}
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          {parsedItems.length > 0 ? (
+                            parsedItems.map((item, idx) => (
+                              <p key={idx} className="text-[#33221C] font-medium flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[#4A1C24] font-semibold">{item.name}</span>
+                                {item.variant && (
+                                  <span className="px-2 py-0.5 bg-[#EFE2D1] text-[#5A2630] rounded text-[11px] font-normal border border-[#B99A62]/30">
+                                    {item.variant}
+                                  </span>
+                                )}
+                                <span className="text-[#806B5E] font-normal">× {item.quantity}</span>
+                              </p>
+                            ))
+                          ) : (
+                            <p className="text-[#33221C] font-medium">{ord.itemSummary || 'Curated Order'}</p>
+                          )}
+
+                          {ord.shippingAddress && (
+                            <p className="text-[#806B5E] text-xs pt-1 truncate">
+                              Shipping to: {ord.shippingAddress}, {ord.city} - {ord.pincode}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#B99A62]/15">
+                        <span className="text-[#806B5E]">
+                          {ord.paymentMethod || 'Online'} ({ord.paymentStatus || 'Pending'}) · Total:{' '}
+                          <strong className="text-[#33221C] tabular-nums">
+                            ₹{Number(ord.totalAmount || 0).toLocaleString('en-IN')}
+                          </strong>
+                        </span>
+
+                        {(ord.status === 'Pending' || ord.status === 'Confirmed') && (
+                          <button
+                            type="button"
+                            onClick={() => cancelCustomerOrder(ord.id, ord)}
+                            className="text-xs text-[#5A2630] underline hover:text-[#33221C] font-medium"
+                          >
+                            Cancel Order
+                          </button>
+                        )}
+                      </div>
                     </div>
-
-                    <p className="text-[#33221C] font-medium">{ord.itemSummary}</p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <span className="text-[#806B5E]">
-                        {ord.paymentMethod} ({ord.paymentStatus}) · Total:{' '}
-                        <strong className="text-[#33221C] tabular-nums">
-                          ₹{ord.totalAmount.toLocaleString('en-IN')}
-                        </strong>
-                      </span>
-
-                      {(ord.status === 'Pending' || ord.status === 'Confirmed') && (
-                        <button
-                          type="button"
-                          onClick={() => cancelCustomerOrder(ord.id, ord)}
-                          className="text-xs text-[#5A2630] underline hover:text-[#33221C]"
-                        >
-                          Cancel Order
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

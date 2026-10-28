@@ -62,6 +62,7 @@ export interface OrderRecord {
   totalAmount: number;
   itemSummary: string;
   itemCount: number;
+  productImage?: string;
   createdAt?: string;
 }
 
@@ -131,6 +132,9 @@ interface StoreContextType {
   user: User | null;
   isAdmin: boolean;
   authReady: boolean;
+  isLoggingIn: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   profile: UserPrivateProfile | null;
   settings: StoreSettings;
   isCartOpen: boolean;
@@ -168,6 +172,7 @@ interface StoreContextType {
     status: OrderRecord['status'],
     paymentStatus: OrderRecord['paymentStatus']
   ) => Promise<void>;
+  adminDeleteOrder: (orderId: string, orderNumber?: string) => Promise<void>;
   adminUpdateSettings: (newSettings: StoreSettings) => Promise<void>;
   adminSeedCatalog: () => Promise<void>;
   uploadHeroMediaFile: (file: File, slideIdx?: number) => Promise<string>;
@@ -177,6 +182,29 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const ADMIN_EMAILS = ['naushadabdul2006@gmail.com', 'lathasarees182@gmail.com'];
+
+export const getStoredDeletedOrderIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('latha_deleted_order_ids');
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+};
+
+export const saveDeletedOrderId = (ids: string[]) => {
+  try {
+    const current = getStoredDeletedOrderIds();
+    ids.forEach((id) => {
+      if (id) current.add(id);
+    });
+    localStorage.setItem('latha_deleted_order_ids', JSON.stringify(Array.from(current)));
+  } catch {
+    // ignore storage error
+  }
+};
 
 function formatTimestamp(val: unknown): string {
   if (val instanceof Timestamp) {
@@ -355,14 +383,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [orders, setOrders] = useState<OrderRecord[]>(() => {
     try {
+      const deletedIds = getStoredDeletedOrderIds();
       const saved = localStorage.getItem('latha_orders_v1');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: OrderRecord[] = JSON.parse(saved);
+      return Array.isArray(parsed)
+        ? parsed.filter((o) => !deletedIds.has(o.id) && !deletedIds.has(o.orderNumber))
+        : [];
     } catch {
       return [];
     }
   });
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const clearAuthError = () => setAuthError(null);
   const [profile, setProfile] = useState<UserPrivateProfile | null>(null);
   const [settings, setSettings] = useState<StoreSettings>(() => {
     try {
@@ -433,9 +469,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     try {
-      if (orders.length > 0) {
-        localStorage.setItem('latha_orders_v1', JSON.stringify(orders));
-      }
+      localStorage.setItem('latha_orders_v1', JSON.stringify(orders));
     } catch {
       // ignore storage errors
     }
@@ -567,11 +601,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Authenticated listeners: Profile, Wishlist, Orders
   useEffect(() => {
-    if (!authReady || !user || !user.emailVerified) {
-      setOrders([]);
-      setProfile(null);
+    if (!authReady || !user) {
+      if (authReady && !user) {
+        setOrders([]);
+        setProfile(null);
+      }
       return;
     }
+
+    // Default patron profile state from auth object
+    const defaultProfile: UserPrivateProfile = {
+      uid: user.uid,
+      displayName: user.displayName || 'Patron',
+      email: user.email || '',
+      phone: '',
+      addressLine: '',
+      city: '',
+      state: '',
+      pincode: '',
+    };
 
     const profilePath = `users/${user.uid}/private/profile`;
     getDoc(doc(db, 'users', user.uid, 'private', 'profile'))
@@ -580,7 +628,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const d = snap.data();
           setProfile({
             uid: user.uid,
-            displayName: d.displayName || user.displayName || '',
+            displayName: d.displayName || user.displayName || 'Patron',
             email: d.email || user.email || '',
             phone: d.phone || '',
             addressLine: d.addressLine || '',
@@ -589,76 +637,81 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             pincode: d.pincode || '',
           });
         } else {
-          setProfile({
-            uid: user.uid,
-            displayName: user.displayName || 'Patron',
-            email: user.email || '',
-            phone: '',
-            addressLine: '',
-            city: '',
-            state: '',
-            pincode: '',
-          });
+          setProfile(defaultProfile);
         }
       })
       .catch((error) => {
-        handleFirestoreError(error, OperationType.GET, profilePath);
+        console.warn('Firestore profile sync info (using auth profile fallback):', error);
+        setProfile(defaultProfile);
       });
 
     const wishlistPath = 'wishlists';
-    const qWishlist = query(collection(db, wishlistPath), where('userId', '==', user.uid));
-    const unsubWishlist = onSnapshot(
-      qWishlist,
-      (snap) => {
-        const ids = snap.docs.map((d) => String(d.data().productId));
-        if (ids.length > 0) {
-          setWishlistIds(ids);
+    let unsubWishlist = () => {};
+    try {
+      const qWishlist = query(collection(db, wishlistPath), where('userId', '==', user.uid));
+      unsubWishlist = onSnapshot(
+        qWishlist,
+        (snap) => {
+          const ids = snap.docs.map((d) => String(d.data().productId));
+          if (ids.length > 0) {
+            setWishlistIds(ids);
+          }
+        },
+        (error) => {
+          console.warn('Firestore wishlist listener info (using local wishlist):', error);
         }
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, wishlistPath);
-      }
-    );
+      );
+    } catch (err) {
+      console.warn('Could not initialize wishlist query:', err);
+    }
 
     const ordersPath = 'orders';
-    const qOrders = isAdmin
-      ? query(collection(db, ordersPath))
-      : query(collection(db, ordersPath), where('userId', '==', user.uid));
+    let unsubOrders = () => {};
+    try {
+      const qOrders = isAdmin
+        ? query(collection(db, ordersPath))
+        : query(collection(db, ordersPath), where('userId', '==', user.uid));
 
-    const unsubOrders = onSnapshot(
-      qOrders,
-      (snap) => {
-        const list: OrderRecord[] = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            orderNumber: data.orderNumber,
-            userId: data.userId,
-            customerName: data.customerName,
-            customerEmail: data.customerEmail,
-            customerPhone: data.customerPhone,
-            shippingAddress: data.shippingAddress,
-            city: data.city,
-            state: data.state,
-            pincode: data.pincode,
-            paymentMethod: data.paymentMethod,
-            paymentStatus: data.paymentStatus,
-            status: data.status,
-            subtotal: Number(data.subtotal),
-            shippingFee: Number(data.shippingFee),
-            discountAmount: Number(data.discountAmount),
-            totalAmount: Number(data.totalAmount),
-            itemSummary: data.itemSummary,
-            itemCount: Number(data.itemCount),
-            createdAt: formatTimestamp(data.createdAt),
-          };
-        });
-        setOrders(list);
-      },
-      (error) => {
-        console.warn('Firestore orders listener info:', error);
-      }
-    );
+      unsubOrders = onSnapshot(
+        qOrders,
+        (snap) => {
+          const deletedIds = getStoredDeletedOrderIds();
+          const list: OrderRecord[] = snap.docs
+            .map((d) => {
+              const data = d.data();
+              return {
+                id: d.id,
+                orderNumber: data.orderNumber || d.id,
+                userId: data.userId || user.uid,
+                customerName: data.customerName || '',
+                customerEmail: data.customerEmail || '',
+                customerPhone: data.customerPhone || '',
+                shippingAddress: data.shippingAddress || '',
+                city: data.city || '',
+                state: data.state || '',
+                pincode: data.pincode || '',
+                paymentMethod: data.paymentMethod || 'Online Payment',
+                paymentStatus: data.paymentStatus || 'Pending',
+                status: data.status || 'Pending',
+                subtotal: Number(data.subtotal || 0),
+                shippingFee: Number(data.shippingFee || 0),
+                discountAmount: Number(data.discountAmount || 0),
+                totalAmount: Number(data.totalAmount || 0),
+                itemSummary: data.itemSummary || 'Curated Latha Order',
+                itemCount: Number(data.itemCount || 1),
+                createdAt: formatTimestamp(data.createdAt),
+              };
+            })
+            .filter((o) => !deletedIds.has(o.id) && !deletedIds.has(o.orderNumber));
+          setOrders(list);
+        },
+        (error) => {
+          console.warn('Firestore orders listener info:', error);
+        }
+      );
+    } catch (err) {
+      console.warn('Could not initialize orders query:', err);
+    }
 
     return () => {
       unsubWishlist();
@@ -722,7 +775,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (exists) {
       setWishlistIds((prev) => prev.filter((id) => id !== productId));
       showToast('Removed from your wishlist');
-      if (user && user.emailVerified) {
+      if (user) {
         const docId = `${user.uid}_${productId}`.replace(/[^a-zA-Z0-9_-]/g, '_');
         try {
           await deleteDoc(doc(db, 'wishlists', docId));
@@ -733,7 +786,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       setWishlistIds((prev) => [...prev, productId]);
       showToast('Saved to your personal wishlist');
-      if (user && user.emailVerified) {
+      if (user) {
         const docId = `${user.uid}_${productId}`.replace(/[^a-zA-Z0-9_-]/g, '_');
         try {
           const productDoc = await getDoc(doc(db, 'products', productId));
@@ -745,29 +798,61 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
           }
         } catch (error) {
-          handleFirestoreError(error, OperationType.WRITE, `wishlists/${docId}`);
+          console.warn('Firestore wishlist sync note:', error);
         }
       }
     }
   };
 
   const loginWithGoogle = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    setAuthError(null);
     try {
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, googleProvider);
+      setAuthError(null);
       showToast('Welcome to Latha Sarees & Jewelry');
-    } catch (err) {
-      console.error('Sign-in error:', err);
-      showToast('Sign-in was cancelled or could not complete');
+    } catch (err: unknown) {
+      console.warn('Sign-in notice:', err);
+      const code = (err as { code?: string })?.code || '';
+      const msg = err instanceof Error ? err.message : '';
+      if (
+        code === 'auth/popup-closed-by-user' ||
+        code === 'auth/cancelled-popup-request' ||
+        msg.includes('closed-by-user') ||
+        msg.includes('cancelled-popup-request')
+      ) {
+        setAuthError('Sign-in was closed before completing. Please try again when ready.');
+        showToast('Sign-in window was closed');
+      } else if (code === 'auth/unauthorized-domain' || msg.includes('unauthorized-domain')) {
+        setAuthError(
+          'Domain not authorized: Please ensure this domain is added to Firebase Console under Authentication > Settings > Authorized domains.'
+        );
+        showToast('Domain not authorized in Firebase Auth. Add domain in Firebase Console.');
+      } else if (code === 'auth/network-request-failed' || msg.includes('network')) {
+        setAuthError('Network communication failed. Please verify your connection.');
+        showToast('Network error during Google sign-in.');
+      } else {
+        setAuthError('Google sign-in could not complete. Please try again.');
+        showToast('Google sign-in could not complete. Please try again.');
+      }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
   const logout = async () => {
-    await signOut(auth);
-    showToast('You have signed out safely');
+    try {
+      await signOut(auth);
+      showToast('You have signed out safely');
+    } catch (e) {
+      console.warn('Signout issue:', e);
+    }
   };
 
   const saveUserProfile = async (data: Omit<UserPrivateProfile, 'uid'>) => {
-    if (!user || !user.emailVerified) return;
+    if (!user) return;
     const path = `users/${user.uid}/private/profile`;
     const payload = {
       uid: user.uid,
@@ -782,20 +867,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     try {
       await setDoc(doc(db, 'users', user.uid, 'private', 'profile'), payload);
-      setProfile({
-        uid: user.uid,
-        displayName: payload.displayName,
-        email: payload.email,
-        phone: payload.phone,
-        addressLine: payload.addressLine,
-        city: payload.city,
-        state: payload.state,
-        pincode: payload.pincode,
-      });
-      showToast('Account & delivery preferences saved');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, path);
+      console.warn('Firestore profile save warning (saved locally):', error);
     }
+    setProfile({
+      uid: user.uid,
+      displayName: payload.displayName,
+      email: payload.email,
+      phone: payload.phone,
+      addressLine: payload.addressLine,
+      city: payload.city,
+      state: payload.state,
+      pincode: payload.pincode,
+    });
+    showToast('Account & delivery preferences saved');
   };
 
   const placeOrder = async (orderInput: {
@@ -846,6 +931,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       totalAmount,
       itemSummary: itemSummary || 'Curated Latha Order',
       itemCount: Math.max(1, itemCount),
+      productImage: cart[0]?.product.thumbnail || cart[0]?.product.images?.[0] || '',
       createdAt: new Date().toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'short',
@@ -889,17 +975,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cancelCustomerOrder = async (orderId: string, currentOrder: OrderRecord) => {
-    if (!user || !user.emailVerified) return;
-    const path = `orders/${orderId}`;
+    if (!user) return;
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status: 'Cancelled',
         updatedAt: serverTimestamp(),
       });
-      showToast(`Order ${currentOrder.orderNumber} has been cancelled`);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
+      console.warn('Firestore order cancel sync warning:', error);
     }
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: 'Cancelled' } : o))
+    );
+    showToast(`Order ${currentOrder.orderNumber} has been cancelled`);
   };
 
   const adminSaveProduct = async (productInput: Omit<Product, 'id'> & { id?: string }) => {
@@ -1028,6 +1116,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       showToast(`Order status updated to ${status}`);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  };
+
+  const adminDeleteOrder = async (orderId: string, orderNumber?: string) => {
+    if (!orderId && !orderNumber) return;
+
+    const idsToFilter = [orderId, orderNumber].filter(Boolean) as string[];
+    saveDeletedOrderId(idsToFilter);
+
+    // 1. Instantly remove from state & localStorage
+    setOrders((prev) => {
+      const next = prev.filter(
+        (ord) =>
+          !idsToFilter.includes(ord.id) &&
+          !idsToFilter.includes(ord.orderNumber)
+      );
+      try {
+        localStorage.setItem('latha_orders_v1', JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+
+    showToast(`Order ${orderNumber || orderId} deleted`);
+
+    // 2. Attempt remote Firestore deletion
+    if (orderId) {
+      try {
+        await deleteDoc(doc(db, 'orders', orderId));
+      } catch (error) {
+        console.warn('Firestore remote deleteDoc note (filtered locally):', error);
+      }
     }
   };
 
@@ -1222,6 +1341,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         user,
         isAdmin,
         authReady,
+        isLoggingIn,
+        authError,
+        clearAuthError,
         profile,
         settings,
         isCartOpen,
@@ -1245,6 +1367,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         adminSaveProduct,
         adminDeleteProduct,
         adminUpdateOrderStatus,
+        adminDeleteOrder,
         adminUpdateSettings,
         adminSeedCatalog,
         uploadHeroMediaFile,

@@ -23,8 +23,9 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { useStore, OrderRecord, DEFAULT_HERO_SLIDES, HeroSlideConfig, sanitizeHeroSlides } from '../context/StoreContext';
-import { BRAND_IMAGES, Product } from '../data/catalog';
+import { BRAND_IMAGES, Product, resolveAssetUrl } from '../data/catalog';
 import { parseHeroMedia, extractPinterestPinId, isPinterestUrl } from '../utils/mediaEmbed';
+import { parseOrderItems, getOrderPrimaryImage } from '../utils/orderUtils';
 
 const PRESET_IMAGES = [
   { label: 'Crimson Banarasi Saree', url: BRAND_IMAGES.sareeBanarasiCrimson },
@@ -91,6 +92,7 @@ export const AdminDashboard: React.FC<{
     adminSaveProduct,
     adminDeleteProduct,
     adminUpdateOrderStatus,
+    adminDeleteOrder,
     adminUpdateSettings,
     adminSeedCatalog,
     uploadHeroMediaFile,
@@ -128,6 +130,7 @@ export const AdminDashboard: React.FC<{
   // Catalog Browsing & Search State
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogFilter, setCatalogFilter] = useState<'All' | 'Sarees' | 'Jewelry'>('All');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Settings State
   const [announcementText, setAnnouncementText] = useState(
@@ -1833,55 +1836,188 @@ export const AdminDashboard: React.FC<{
               </p>
             ) : (
               <div className="space-y-4">
-                {orders.map((ord) => (
-                  <div
-                    key={ord.id}
-                    className="p-5 bg-[#F7F0E6] border border-[#B99A62]/30 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-semibold text-[#33221C] tabular-nums">
-                        {ord.orderNumber} · {ord.customerName} ({ord.customerPhone})
-                      </p>
-                      <p className="text-[#806B5E]">
-                        {ord.shippingAddress}, {ord.city}, {ord.state} - {ord.pincode}
-                      </p>
-                      <p className="text-[#33221C] font-medium">{ord.itemSummary}</p>
-                      <p className="text-[#5A2630] font-semibold tabular-nums">
-                        Total: ₹{ord.totalAmount.toLocaleString('en-IN')} ·{' '}
-                        {ord.paymentMethod} ({ord.paymentStatus})
-                      </p>
-                    </div>
+                {orders.map((ord) => {
+                  const parsedItems = parseOrderItems(ord.itemSummary, products);
+                  const primaryImg = ord.productImage
+                    ? resolveAssetUrl(ord.productImage)
+                    : parsedItems[0]?.imageUrl || resolveAssetUrl(BRAND_IMAGES.heroBridal);
 
-                    <div className="flex items-center gap-3">
-                      <select
-                        value={ord.status}
-                        onChange={(e) =>
-                          adminUpdateOrderStatus(
-                            ord.id,
-                            e.target.value as OrderRecord['status'],
-                            ord.paymentStatus
-                          )
-                        }
-                        className="px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/50 text-xs font-medium"
-                      >
-                        {[
-                          'Pending',
-                          'Confirmed',
-                          'Processing',
-                          'Shipped',
-                          'Out for Delivery',
-                          'Delivered',
-                          'Cancelled',
-                          'Returned',
-                        ].map((st) => (
-                          <option key={st} value={st}>
-                            {st}
-                          </option>
-                        ))}
-                      </select>
+                  return (
+                    <div
+                      key={ord.id}
+                      className="p-5 bg-[#F7F0E6] border border-[#B99A62]/30 flex flex-col lg:flex-row lg:items-center justify-between gap-5 text-xs shadow-sm hover:border-[#B99A62]/60 transition-colors"
+                    >
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        {/* Product Thumbnail(s) Preview */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {parsedItems.length > 0 ? (
+                            parsedItems.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="relative w-16 h-20 sm:w-20 sm:h-24 rounded bg-[#2C1814] border border-[#B99A62]/40 overflow-hidden shrink-0 shadow-sm group"
+                                title={`${item.name}${item.variant ? ` (${item.variant})` : ''} — Qty: ${item.quantity}`}
+                              >
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = resolveAssetUrl(BRAND_IMAGES.heroBridal);
+                                  }}
+                                />
+                                {item.quantity > 1 && (
+                                  <span className="absolute bottom-1 right-1 bg-[#4A1C24]/90 text-[#F7F0E6] text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                                    ×{item.quantity}
+                                  </span>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded bg-[#2C1814] border border-[#B99A62]/40 overflow-hidden shrink-0 shadow-sm">
+                              <img
+                                src={primaryImg}
+                                alt={ord.itemSummary || 'Order Item'}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Customer & Order Metadata */}
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-[#33221C] text-sm tabular-nums">
+                              {ord.orderNumber}
+                            </span>
+                            <span className="text-[#806B5E]">·</span>
+                            <span className="font-medium text-[#33221C]">
+                              {ord.customerName}
+                            </span>
+                            <span className="text-[#806B5E] tabular-nums">
+                              ({ord.customerPhone})
+                            </span>
+                            {ord.customerEmail && (
+                              <span className="text-[#806B5E] text-[11px] truncate hidden sm:inline">
+                                · {ord.customerEmail}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-[#806B5E] text-xs">
+                            {ord.shippingAddress}, {ord.city}, {ord.state} - {ord.pincode}
+                          </p>
+
+                          {/* Items Breakdown with Badges */}
+                          <div className="space-y-1 pt-0.5">
+                            {parsedItems.length > 0 ? (
+                              parsedItems.map((item, idx) => (
+                                <p key={idx} className="text-[#33221C] font-medium flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[#4A1C24] font-semibold">{item.name}</span>
+                                  {item.variant && (
+                                    <span className="px-2 py-0.5 bg-[#EFE2D1] text-[#5A2630] rounded text-[11px] font-normal border border-[#B99A62]/30">
+                                      {item.variant}
+                                    </span>
+                                  )}
+                                  <span className="text-[#806B5E] font-normal">× {item.quantity}</span>
+                                </p>
+                              ))
+                            ) : (
+                              <p className="text-[#33221C] font-medium">{ord.itemSummary}</p>
+                            )}
+                          </div>
+
+                          <p className="text-[#5A2630] font-semibold tabular-nums text-xs pt-1">
+                            Total: ₹{ord.totalAmount.toLocaleString('en-IN')} ·{' '}
+                            <span className="text-[#33221C] font-medium">
+                              {ord.paymentMethod}
+                            </span>{' '}
+                            ({ord.paymentStatus})
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Selector & Tag */}
+                      <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-[#B99A62]/20">
+                        <span
+                          className={`px-2.5 py-1 rounded text-[11px] font-semibold uppercase tracking-wider ${
+                            ord.status === 'Delivered'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : ord.status === 'Cancelled' || ord.status === 'Returned'
+                              ? 'bg-red-100 text-red-800 border border-red-300'
+                              : ord.status === 'Shipped' || ord.status === 'Out for Delivery'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                              : 'bg-[#EFE2D1] text-[#5A2630] border border-[#B99A62]/40'
+                          }`}
+                        >
+                          {ord.status}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <label className="text-[11px] text-[#806B5E] hidden lg:inline">Update:</label>
+                          <select
+                            value={ord.status}
+                            onChange={(e) =>
+                              adminUpdateOrderStatus(
+                                ord.id,
+                                e.target.value as OrderRecord['status'],
+                                ord.paymentStatus
+                              )
+                            }
+                            className="px-3 py-2 bg-[#FFFDFC] border border-[#B99A62]/50 text-xs font-medium rounded shadow-sm focus:outline-none focus:border-[#4A1C24]"
+                          >
+                            {[
+                              'Pending',
+                              'Confirmed',
+                              'Processing',
+                              'Shipped',
+                              'Out for Delivery',
+                              'Delivered',
+                              'Cancelled',
+                              'Returned',
+                            ].map((st) => (
+                              <option key={st} value={st}>
+                                {st}
+                              </option>
+                            ))}
+                          </select>
+
+                          {confirmDeleteId === ord.id ? (
+                            <div className="flex items-center gap-1.5 animate-fadeIn">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  adminDeleteOrder(ord.id, ord.orderNumber);
+                                  setConfirmDeleteId(null);
+                                }}
+                                className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-semibold tracking-wide transition-colors shadow-sm cursor-pointer"
+                              >
+                                Confirm?
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="px-2 py-1.5 bg-[#EFE2D1] hover:bg-[#D9C4AC] text-[#33221C] rounded text-[11px] font-medium transition-colors cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(ord.id)}
+                              className="px-2.5 py-2 text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-700 border border-rose-200 hover:border-rose-700 rounded transition-colors flex items-center gap-1.5 shadow-sm text-xs font-medium cursor-pointer"
+                              title="Delete this order record"
+                              aria-label={`Delete order ${ord.orderNumber}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

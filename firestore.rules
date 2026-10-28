@@ -212,7 +212,7 @@ service cloud.firestore {
             incoming().status == 'Cancelled' &&
             incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
         );
-      allow delete: if false;
+      allow delete: if isAdmin() && isValidId(orderId);
     }
 
     // Wishlists
